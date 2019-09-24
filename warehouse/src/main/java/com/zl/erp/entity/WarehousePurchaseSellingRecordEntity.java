@@ -3,9 +3,6 @@ package com.zl.erp.entity;
 import lombok.Data;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.util.Objects;
 
 /**
  * @Description: 进售货记录
@@ -44,10 +41,16 @@ public class WarehousePurchaseSellingRecordEntity {
     private Integer manageType;
 
     /**
-     * 物料进价 进售货时，物料类型编号对应的进价要和种类管理中进价对应，否则新增类型
+     * 物料进价
      */
     @Column(name = "purchase_price")
     private String purchasePrice;
+
+    /**
+     * 物料售价
+     */
+    @Column(name = "selling_price")
+    private String sellingPrice;
 
     /**
      * 客户编号
@@ -59,7 +62,7 @@ public class WarehousePurchaseSellingRecordEntity {
      * 创建时间
      */
     @Column(name = "create_time")
-    private Timestamp createTime;
+    private String createTime;
 
     /**
      * 备注

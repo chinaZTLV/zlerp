@@ -241,7 +241,7 @@ public class MaterialKindManageService {
      *
      * @return 缓存
      */
-    private Map<String, String> getMaterialKindCache() {
+    public Map<String, String> getMaterialKindCache() {
         if (!redisService.exists(REDIS_CACHE_KIND_KEY)) {
             baseCacheService.refreshBaseCache(REDIS_CACHE_KIND_KEY);
         }

@@ -4,6 +4,9 @@ import com.zl.erp.common.ResponseData;
 import com.zl.erp.common.ResponseDataPage;
 import com.zl.erp.constants.CommonConstants;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -126,5 +129,17 @@ public class CommonDataUtils {
     public static String getFormatDateString(Date date) {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return simpleDateFormat.format(date);
+    }
+
+    /**
+     * 保留两位小数
+     *
+     * @param bigDecimal 数值
+     * @return 两位小数值
+     */
+    public static String formatToString(BigDecimal bigDecimal) {
+        DecimalFormat format = new DecimalFormat("#0.00");
+        format.setRoundingMode(RoundingMode.FLOOR);
+        return format.format(bigDecimal);
     }
 }

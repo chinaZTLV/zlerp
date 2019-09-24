@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static com.zl.erp.constants.CommonConstants.*;
 
@@ -186,6 +187,13 @@ public class ConsumerManageService {
             log.error("[获取厂方缓存信息出错]", ex);
         }
         return CommonDataUtils.errorPageResponse();
+    }
+
+    public Map<String, String> getConsumerCacheMap() {
+        if (!redisService.exists(REDIS_CACHE_CONSUMER_KEY)) {
+            baseCacheService.refreshBaseCache(REDIS_CACHE_CONSUMER_KEY);
+        }
+        return redisService.hgetall(REDIS_CACHE_CONSUMER_KEY);
     }
 
     /**

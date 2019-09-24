@@ -72,4 +72,31 @@ public class CommonConstants {
      */
     public static final String FACTORY_TYPE = "0";
 
+    /**
+     * 无此物料类型
+     */
+    public static final String NOT_EXISTS_MATERIAL_KIND = "无此物料类型！";
+
+    //0：退还厂方、1：进货、2：售货、3：退货
+
+    /**
+     * 退还厂方
+     */
+    public static final int MANAGE_TYPE_RETURNED_TO_FACTORY = 0;
+
+    /**
+     * 进货
+     */
+    public static final int MANAGE_TYPE_PURCHASE = 1;
+
+    /**
+     * 售货
+     */
+    public static final int MANAGE_TYPE_SALES = 2;
+
+    /**
+     * 退货
+     */
+    public static final int MANAGE_TYPE_RETURNED_PURCHASE= 3;
+
 }

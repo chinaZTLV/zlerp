@@ -27,13 +27,13 @@ public class WarehouseInventoryManageEntity {
      * 物料类型编号
      */
     @Column(name = "product_kind_id")
-    private String productKindId;
+    private Integer productKindId;
 
     /**
      * 库存数量
      */
     @Column(name = "stock_num")
-    private Integer stockNum;
+    private String stockNum;
 
     /**
      * 总价
@@ -51,11 +51,36 @@ public class WarehouseInventoryManageEntity {
      * 更新时间
      */
     @Column(name = "update_time")
-    private Integer updateTime;
+    private String updateTime;
 
     /**
      * 备注
      */
     @Column(name = "remark")
     private String remark;
+
+    /**
+     * 物料名称
+     */
+    @Transient
+    private String productKindName;
+
+    /**
+     * 单位
+     */
+    @Transient
+    private String unit;
+
+    /**
+     * 客户编号
+     */
+    @Transient
+    private String consumerId;
+
+    /**
+     * 客户名称
+     */
+    @Transient
+    private String consumerName;
+
 }
