@@ -35,6 +35,12 @@ public class BaseCacheService {
         this.kindManageRepository = kindManageRepository;
     }
 
+    /**
+     * 刷新缓存
+     *
+     * @param cacheType 缓存类型
+     * @return 是否执行成功
+     */
     public boolean refreshBaseCache(String cacheType) {
         if (REDIS_CACHE_CONSUMER_KEY.equals(cacheType)) {
             List<ConsumerManageRecordEntity> consumerManageRecordList = consumerRepository.getConsumerListByType();
@@ -44,11 +50,11 @@ public class BaseCacheService {
                     redisService.hset(REDIS_CACHE_CONSUMER_KEY, String.valueOf(consumer.getConsumerId()), consumer.getConsumerName());
                 }
             });
+            return true;
         } else if (REDIS_CACHE_KIND_KEY.equals(cacheType)) {
             List<MaterialKindManageEntity> materialKindManageList = kindManageRepository.queryMaterialKindManageList();
-            materialKindManageList.forEach(kindManage -> {
-                redisService.hset(REDIS_CACHE_KIND_KEY, String.valueOf(kindManage.getProductKindId()), kindManage.getProductKindName());
-            });
+            materialKindManageList.forEach(kindManage -> redisService.hset(REDIS_CACHE_KIND_KEY, String.valueOf(kindManage.getProductKindId()), kindManage.getProductKindName()));
+            return true;
         }
         return false;
     }
