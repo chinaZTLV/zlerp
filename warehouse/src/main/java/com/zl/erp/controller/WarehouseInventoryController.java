@@ -1,9 +1,10 @@
 package com.zl.erp.controller;
 
 import com.zl.erp.common.*;
-import com.zl.erp.entity.MaterialKindManageEntity;
+import com.zl.erp.entity.PurchaseSellingOrderRecordEntity;
 import com.zl.erp.entity.WarehouseInventoryEntity;
 import com.zl.erp.service.WarehouseInventoryService;
+import com.zl.erp.utils.CommonDataUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -66,5 +67,33 @@ public class WarehouseInventoryController extends BaseController {
     @PostMapping("/getWarehouseInventoryDetail")
     public Message getWarehouseInventoryDetail(@RequestBody RequestData<WarehouseInventoryEntity> requestData) {
         return convert(requestData.getHeader(), inventoryService.getWarehouseInventoryDetail(requestData));
+    }
+
+    /**
+     * 下单时获取订单金额信息
+     *
+     * @param requestData 请求入参
+     * @return 客户信息
+     */
+    @ApiOperation(value = "下单时获取订单金额信息")
+    @PostMapping("/getOrderAmountInfo")
+    public Message getOrderAmountInfo(@RequestBody RequestData<PurchaseSellingOrderRecordEntity> requestData) {
+        return convert(requestData.getHeader(), inventoryService.getOrderAmountInfo(requestData));
+    }
+
+    /**
+     * 下单
+     *
+     * @param requestData 请求入参
+     * @return 客户信息
+     */
+    @ApiOperation(value = "下单")
+    @PostMapping("/placingAnOrder")
+    public Message placingAnOrder(@RequestBody RequestData<PurchaseSellingOrderRecordEntity> requestData) {
+        try {
+            return convert(requestData.getHeader(), inventoryService.placingAnOrder(requestData));
+        } catch (Exception ex) {
+            return convert(requestData.getHeader(), CommonDataUtils.responseFailure());
+        }
     }
 }

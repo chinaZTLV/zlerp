@@ -123,7 +123,7 @@ public class ConsumerManageService {
             return CommonDataUtils.responseSuccess(consumer);
         } catch (Exception ex) {
             log.error("[客户信息]新增异常：{}", ex);
-            throw new Exception(ex);
+            throw ex;
         }
     }
 
@@ -134,7 +134,7 @@ public class ConsumerManageService {
      * @return 执行结果
      */
     @Transactional(rollbackFor = Exception.class)
-    public ResponseData deleteConsumerById(RequestData<ConsumerManageRecordEntity> consumerRecord) throws Exception {
+    public ResponseData deleteConsumerById(RequestData<ConsumerManageRecordEntity> consumerRecord) {
         ConsumerManageRecordEntity consumerParams = consumerRecord.getBody();
         try {
             assert consumerParams != null;
@@ -147,7 +147,7 @@ public class ConsumerManageService {
             return CommonDataUtils.responseSuccess();
         } catch (Exception ex) {
             log.error("[删除客户信息]：{}", ex);
-            throw new Exception(ex);
+            throw ex;
         }
     }
 
@@ -179,16 +179,18 @@ public class ConsumerManageService {
      */
     public ResponseData getConsumerListByType() {
         try {
-            if (!redisService.exists(REDIS_CACHE_CONSUMER_KEY)) {
-                baseCacheService.refreshBaseCache(REDIS_CACHE_CONSUMER_KEY);
-            }
-            return CommonDataUtils.responseSuccess(redisService.hgetall(REDIS_CACHE_CONSUMER_KEY));
+            return CommonDataUtils.responseSuccess(getConsumerCacheMap());
         } catch (Exception ex) {
             log.error("[获取厂方缓存信息出错]", ex);
         }
         return CommonDataUtils.errorPageResponse();
     }
 
+    /**
+     * 获取客户缓存信息
+     *
+     * @return 客户缓存信息
+     */
     public Map<String, String> getConsumerCacheMap() {
         if (!redisService.exists(REDIS_CACHE_CONSUMER_KEY)) {
             baseCacheService.refreshBaseCache(REDIS_CACHE_CONSUMER_KEY);

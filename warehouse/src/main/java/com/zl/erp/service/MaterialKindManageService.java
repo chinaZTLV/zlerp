@@ -1,5 +1,6 @@
 package com.zl.erp.service;
 
+import com.alibaba.fastjson.JSON;
 import com.zl.erp.common.RequestData;
 import com.zl.erp.common.RequestDataPage;
 import com.zl.erp.common.ResponseData;
@@ -167,10 +168,11 @@ public class MaterialKindManageService {
             }
             MaterialKindManageEntity kindRecord = materialRepository.save(materialKindParams);
             redisService.hset(REDIS_CACHE_KIND_KEY, String.valueOf(kindRecord.getProductKindId()), kindRecord.getProductKindName());
+            redisService.hset(REDIS_CACHE_KIND_INFO_KEY, String.valueOf(kindRecord.getProductKindId()), JSON.toJSONString(kindRecord));
             return CommonDataUtils.responseSuccess(kindRecord);
         } catch (Exception ex) {
             log.error("[保存物料类型]出现异常：{}", ex);
-            throw new Exception(ex);
+            throw ex;
         }
     }
 
@@ -192,10 +194,11 @@ public class MaterialKindManageService {
             // TODO 检查库存中是否存在该类型的数据
             materialRepository.deleteById(productKindId);
             redisService.hdel(REDIS_CACHE_CONSUMER_KEY, String.valueOf(productKindId));
+            redisService.hdel(REDIS_CACHE_KIND_INFO_KEY, String.valueOf(productKindId));
             return CommonDataUtils.responseSuccess();
         } catch (Exception ex) {
             log.error("[删除物料类型]出现异常：{}", ex);
-            throw new Exception(ex);
+            throw ex;
         }
     }
 

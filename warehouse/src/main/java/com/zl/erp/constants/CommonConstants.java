@@ -68,6 +68,11 @@ public class CommonConstants {
     public static final String REDIS_CACHE_KIND_KEY = "REDIS_CACHE_KIND";
 
     /**
+     * redis缓存
+     */
+    public static final String REDIS_CACHE_KIND_INFO_KEY = "REDIS_CACHE_KIND_INFO_KEY";
+
+    /**
      * 厂方
      */
     public static final String FACTORY_TYPE = "0";
@@ -76,8 +81,6 @@ public class CommonConstants {
      * 无此物料类型
      */
     public static final String NOT_EXISTS_MATERIAL_KIND = "无此物料类型！";
-
-    //0：退还厂方、1：进货、2：售货、3：退货
 
     /**
      * 退还厂方

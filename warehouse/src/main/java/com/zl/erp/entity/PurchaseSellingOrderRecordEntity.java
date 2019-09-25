@@ -32,6 +32,12 @@ public class PurchaseSellingOrderRecordEntity {
     private String tradeType;
 
     /**
+     * 交易类型 0：退还厂方、1：进货、2：售货、3：退货
+     */
+    @Column(name = "manage_type")
+    private Integer manageType;
+
+    /**
      * 物料类型编号
      */
     @Column(name = "product_kind_id")
