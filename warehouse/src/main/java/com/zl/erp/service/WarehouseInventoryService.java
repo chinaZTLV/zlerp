@@ -131,11 +131,10 @@ public class WarehouseInventoryService {
      */
     public ResponseData getOrderAmountInfo(RequestData<PurchaseSellingOrderRecordEntity> requestData) {
         PurchaseSellingOrderRecordEntity purchaseSellParams = requestData.getBody();
-        if (CodeHelper.isNotNullOrEmpty(purchaseSellParams.getDiscount()) || CodeHelper.isNull(purchaseSellParams.getProductKindId()) || CodeHelper.isNotNullOrEmpty(purchaseSellParams.getStockNum())) {
+        if (CodeHelper.isNullOrEmpty(purchaseSellParams.getDiscount()) || CodeHelper.isNull(purchaseSellParams.getProductKindId()) || CodeHelper.isNullOrEmpty(purchaseSellParams.getStockNum())) {
             return CommonDataUtils.responseFailure(CommonConstants.ERROR_PARAMS);
         }
         try {
-            purchaseSellParams = new PurchaseSellingOrderRecordEntity();
             Integer kindId = purchaseSellParams.getProductKindId();
             String cacheJson = getMaterialKindManageCacheMap().get(String.valueOf(kindId));
             MaterialKindManageEntity kindManage = JSON.parseObject(cacheJson, MaterialKindManageEntity.class);
