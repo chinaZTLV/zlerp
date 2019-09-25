@@ -100,6 +100,7 @@ public class WarehouseInventoryService {
         log.info("[库存导出]构造后参数：{}, 过滤条件：{}", manageParams.toString(), filterTerms.toString());
         try {
             List<WarehouseInventoryEntity> resultList = inventoryRepository.commonQueryByMultiParam(manageParams, filterTerms, new FilterOrder("createTime", FilterKeyword.DESC));
+            resultList.forEach(inventory -> inventory.setUnit(getUnitName(inventory.getUnit())));
             EasyPoiUtils.exportExcel(resultList, "库存管理", "库存管理报表", WarehouseInventoryEntity.class, "库存管理.xls", response);
         } catch (Exception ex) {
             log.error("[库存导出]查询异常：{}", ex);
@@ -264,6 +265,20 @@ public class WarehouseInventoryService {
         if (CodeHelper.isNotNullOrEmpty(manageParams.getProductKindName())) {
             filterTerms.add(new FilterTerm("productKindName", FilterKeyword.LK));
         }
+    }
+
+    /**
+     * 单位
+     *
+     * @return 单位
+     */
+    private String getUnitName(String key) {
+        Map<String, String> unitMap = new HashMap<>();
+        unitMap.put("0", "块");
+        unitMap.put("2", "米");
+        unitMap.put("1", "个");
+        unitMap.put("3", "平方");
+        return unitMap.get(key);
     }
 
 }
