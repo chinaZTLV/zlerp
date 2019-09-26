@@ -106,7 +106,7 @@ public class ConsumerManageService {
      * @return 响应信息
      */
     @Transactional(rollbackFor = Exception.class)
-    public ResponseData saveConsumerManageRecord(RequestData<ConsumerManageRecordEntity> requestData) throws Exception {
+    public ResponseData saveConsumerManageRecord(RequestData<ConsumerManageRecordEntity> requestData) {
         ConsumerManageRecordEntity params = requestData.getBody();
         if (CodeHelper.isNullOrEmpty(params.getConsumerName()) || CodeHelper.isNullOrEmpty(params.getConsumerType()) || CodeHelper.isNullOrEmpty(params.getContactAddr())) {
             return CommonDataUtils.responseFailure(ERROR_PARAMS);
@@ -191,7 +191,7 @@ public class ConsumerManageService {
      *
      * @return 客户缓存信息
      */
-    public Map<String, String> getConsumerCacheMap() {
+    private Map<String, String> getConsumerCacheMap() {
         if (!redisService.exists(REDIS_CACHE_CONSUMER_KEY)) {
             baseCacheService.refreshBaseCache(REDIS_CACHE_CONSUMER_KEY);
         }

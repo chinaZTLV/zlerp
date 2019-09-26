@@ -100,6 +100,21 @@ public class CommonConstants {
     /**
      * 退货
      */
-    public static final int MANAGE_TYPE_RETURNED_PURCHASE= 3;
+    public static final int MANAGE_TYPE_RETURNED_PURCHASE = 3;
+
+    /**
+     * 已下单
+     */
+    public static final String ORDER_PLACED = "0";
+
+    /**
+     * 已发货
+     */
+    public static final String ORDER_DELIVER_GOODS = "1";
+
+    /**
+     * 已付款
+     */
+    public static final String ORDER_PAY = "2";
 
 }

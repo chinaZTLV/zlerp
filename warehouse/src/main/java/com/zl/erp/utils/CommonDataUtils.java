@@ -9,6 +9,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Random;
 
 /**
  * @Description: 公共数据处理类
@@ -141,5 +142,16 @@ public class CommonDataUtils {
         DecimalFormat format = new DecimalFormat("#0.00");
         format.setRoundingMode(RoundingMode.FLOOR);
         return format.format(bigDecimal);
+    }
+
+    /**
+     * 生成uuid
+     *
+     * @return uuid
+     */
+    public static String getUUID() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmssSSS");
+        String random = String.format("%03d", new Random().nextInt(1000));
+        return sdf.format(new Date()) + random;
     }
 }

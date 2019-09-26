@@ -13,7 +13,6 @@ import com.zl.erp.entity.MaterialKindManageEntity;
 import com.zl.erp.entity.PurchaseSellingOrderRecordEntity;
 import com.zl.erp.entity.WarehouseInventoryEntity;
 import com.zl.erp.repository.PurchaseSellingOrderRepository;
-import com.zl.erp.repository.WarehouseInventoryManageRepository;
 import com.zl.erp.repository.WarehouseInventoryRepository;
 import com.zl.erp.utils.CodeHelper;
 import com.zl.erp.utils.CommonDataUtils;
@@ -41,8 +40,6 @@ import static com.zl.erp.constants.CommonConstants.*;
 @Service
 public class WarehouseInventoryService {
 
-    private final WarehouseInventoryManageRepository warehouseRepository;
-
     private final WarehouseInventoryRepository inventoryRepository;
 
     private final PurchaseSellingOrderRepository sellingOrderRepository;
@@ -52,8 +49,7 @@ public class WarehouseInventoryService {
     private final RedisService redisService;
 
     @Autowired
-    public WarehouseInventoryService(WarehouseInventoryManageRepository warehouseRepository, WarehouseInventoryRepository inventoryRepository, PurchaseSellingOrderRepository sellingOrderRepository, BaseCacheService cacheService, RedisService redisService) {
-        this.warehouseRepository = warehouseRepository;
+    public WarehouseInventoryService(WarehouseInventoryRepository inventoryRepository, PurchaseSellingOrderRepository sellingOrderRepository, BaseCacheService cacheService, RedisService redisService) {
         this.inventoryRepository = inventoryRepository;
         this.sellingOrderRepository = sellingOrderRepository;
         this.cacheService = cacheService;
@@ -81,7 +77,6 @@ public class WarehouseInventoryService {
             responsePageEntity.setTotalCount((int) pageResult.getTotalElements());
             responsePageEntity.setTotalPage(pageResult.getTotalPages());
             return responsePageEntity;
-
         } catch (Exception ex) {
             log.error("[库存分页列表]查询异常：{}", ex);
             return CommonDataUtils.errorPageResponse();
@@ -131,7 +126,8 @@ public class WarehouseInventoryService {
      */
     public ResponseData getOrderAmountInfo(RequestData<PurchaseSellingOrderRecordEntity> requestData) {
         PurchaseSellingOrderRecordEntity purchaseSellParams = requestData.getBody();
-        if (CodeHelper.isNullOrEmpty(purchaseSellParams.getDiscount()) || CodeHelper.isNull(purchaseSellParams.getProductKindId()) || CodeHelper.isNullOrEmpty(purchaseSellParams.getStockNum())) {
+        if (CodeHelper.isNullOrEmpty(purchaseSellParams.getDiscount()) || CodeHelper.isNull(purchaseSellParams.getProductKindId())
+                || CodeHelper.isNullOrEmpty(purchaseSellParams.getStockNum()) || CodeHelper.isNull(purchaseSellParams.getManageType())) {
             return CommonDataUtils.responseFailure(CommonConstants.ERROR_PARAMS);
         }
         try {
@@ -141,12 +137,12 @@ public class WarehouseInventoryService {
             List<Integer> ownTradeTypeList = Arrays.asList(MANAGE_TYPE_PURCHASE, MANAGE_TYPE_RETURNED_TO_FACTORY);
             BigDecimal unitPrice;
             if (ownTradeTypeList.contains(purchaseSellParams.getManageType())) {
-                unitPrice = new BigDecimal(kindManage.getSellingPrice());
+                unitPrice = new BigDecimal(kindManage.getPurchasePrice());
                 purchaseSellParams.setConsumerId(kindManage.getConsumerId());
             } else {
-                unitPrice = new BigDecimal(kindManage.getPurchasePrice());
+                unitPrice = new BigDecimal(kindManage.getSellingPrice());
             }
-            purchaseSellParams.setTotalAmount(CommonDataUtils.formatToString(getOrderAmountInfo(purchaseSellParams, unitPrice)));
+            purchaseSellParams.setTotalAmount(CommonDataUtils.formatToString(getOrderAmount(purchaseSellParams, unitPrice)));
             purchaseSellParams.setUnitPrice(CommonDataUtils.formatToString(unitPrice));
             purchaseSellParams.setDiscountAmount(CommonDataUtils.formatToString(getOrderDiscountAmount(purchaseSellParams, unitPrice)));
             return CommonDataUtils.responseSuccess(purchaseSellParams);
@@ -162,7 +158,7 @@ public class WarehouseInventoryService {
      * @param purchaseSellParams 参数
      * @return 金额
      */
-    private BigDecimal getOrderAmountInfo(PurchaseSellingOrderRecordEntity purchaseSellParams, BigDecimal unitPrice) {
+    private BigDecimal getOrderAmount(PurchaseSellingOrderRecordEntity purchaseSellParams, BigDecimal unitPrice) {
         BigDecimal discount = new BigDecimal(purchaseSellParams.getDiscount());
         BigDecimal stockNum = new BigDecimal(purchaseSellParams.getStockNum());
         BigDecimal totalAmount = unitPrice.multiply(stockNum);
@@ -178,7 +174,7 @@ public class WarehouseInventoryService {
     private BigDecimal getOrderDiscountAmount(PurchaseSellingOrderRecordEntity purchaseSellParams, BigDecimal unitPrice) {
         BigDecimal stockNum = new BigDecimal(purchaseSellParams.getStockNum());
         BigDecimal totalAmount = unitPrice.multiply(stockNum);
-        return totalAmount.subtract(getOrderAmountInfo(purchaseSellParams, unitPrice));
+        return totalAmount.subtract(getOrderAmount(purchaseSellParams, unitPrice));
     }
 
     /**
@@ -200,15 +196,18 @@ public class WarehouseInventoryService {
             BigDecimal unitPrice;
             MaterialKindManageEntity kindManage = JSON.parseObject(cacheJson, MaterialKindManageEntity.class);
             if (ownTradeTypeList.contains(purchaseSellParams.getManageType())) {
-                unitPrice = new BigDecimal(kindManage.getSellingPrice());
-            } else {
                 unitPrice = new BigDecimal(kindManage.getPurchasePrice());
+            } else {
+                unitPrice = new BigDecimal(kindManage.getSellingPrice());
             }
-            BigDecimal orderAmount = getOrderAmountInfo(purchaseSellParams, unitPrice);
+            BigDecimal orderAmount = getOrderAmount(purchaseSellParams, unitPrice);
             BigDecimal totalAmount = new BigDecimal(purchaseSellParams.getTotalAmount());
             if (totalAmount.compareTo(orderAmount) != 0) {
                 return CommonDataUtils.responseFailure("金额不一致！");
             }
+            purchaseSellParams.setPurchasePrice(kindManage.getPurchasePrice());
+            purchaseSellParams.setTradeType(ORDER_PLACED);
+            purchaseSellParams.setTradeType("0");
             purchaseSellParams.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
             return CommonDataUtils.responseSuccess(sellingOrderRepository.save(purchaseSellParams));
         } catch (Exception ex) {
@@ -223,7 +222,7 @@ public class WarehouseInventoryService {
      * @param purchaseSellParams 参数
      * @return true:通过 false:不通过
      */
-    public boolean checkPlacingAnOrderParams(PurchaseSellingOrderRecordEntity purchaseSellParams) {
+    private boolean checkPlacingAnOrderParams(PurchaseSellingOrderRecordEntity purchaseSellParams) {
         return CodeHelper.isNullOrEmpty(purchaseSellParams.getDiscount()) || CodeHelper.isNull(purchaseSellParams.getProductKindId())
                 || CodeHelper.isNullOrEmpty(purchaseSellParams.getStockNum()) || CodeHelper.isNull(purchaseSellParams.getConsumerId());
     }

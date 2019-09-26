@@ -87,7 +87,6 @@ public class MaterialKindManageService {
      *
      * @param requestData 分页入参
      * @param response    响应
-     * @return 分页列表
      */
     public void exportMaterialKindList(RequestData<MaterialKindManageEntity> requestData, HttpServletResponse response) {
         MaterialKindManageEntity kindManageParams = requestData.getBody();
@@ -146,7 +145,7 @@ public class MaterialKindManageService {
      * @return 操作结果
      */
     @Transactional(rollbackFor = Exception.class)
-    public ResponseData saveMaterialKindManage(RequestData<MaterialKindManageEntity> requestData) throws Exception {
+    public ResponseData saveMaterialKindManage(RequestData<MaterialKindManageEntity> requestData) {
         MaterialKindManageEntity materialKindParams = requestData.getBody();
         if (CodeHelper.isNullOrEmpty(materialKindParams.getProductKindName()) || CodeHelper.isNull(materialKindParams.getConsumerId()) || CodeHelper.isNullOrEmpty(materialKindParams.getSellingPrice()) || CodeHelper.isNull(materialKindParams.getUnit())) {
             return CommonDataUtils.responseFailure(ERROR_PARAMS);
@@ -181,10 +180,9 @@ public class MaterialKindManageService {
      *
      * @param requestData 请求参数
      * @return 操作结果
-     * @throws Exception Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    public ResponseData deleteMaterialKind(RequestData<MaterialKindManageEntity> requestData) throws Exception {
+    public ResponseData deleteMaterialKind(RequestData<MaterialKindManageEntity> requestData) {
         MaterialKindManageEntity materialKindParams = requestData.getBody();
         if (CodeHelper.isNull(materialKindParams)) {
             return CommonDataUtils.responseFailure(ERROR_PARAMS);
@@ -244,7 +242,7 @@ public class MaterialKindManageService {
      *
      * @return 缓存
      */
-    public Map<String, String> getMaterialKindCache() {
+    private Map<String, String> getMaterialKindCache() {
         if (!redisService.exists(REDIS_CACHE_KIND_KEY)) {
             baseCacheService.refreshBaseCache(REDIS_CACHE_KIND_KEY);
         }
@@ -271,7 +269,7 @@ public class MaterialKindManageService {
      * @return 单位
      */
     private String getUnitName(String key) {
-        Map<String, String> unitMap = new HashMap<>();
+        Map<String, String> unitMap = new HashMap<>(4);
         unitMap.put("0", "块");
         unitMap.put("1", "个");
         unitMap.put("2", "米");
