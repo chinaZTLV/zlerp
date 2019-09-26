@@ -8,9 +8,11 @@ import com.zl.erp.common.db.FilterKeyword;
 import com.zl.erp.common.db.FilterOrder;
 import com.zl.erp.common.db.FilterTerm;
 import com.zl.erp.constants.CommonConstants;
-import com.zl.erp.entity.WarehouseOrderEntity;
+import com.zl.erp.entity.*;
+import com.zl.erp.repository.FinanceFlowRecordRepository;
 import com.zl.erp.repository.PurchaseSellingOrderRepository;
 import com.zl.erp.repository.WarehouseOrderRepository;
+import com.zl.erp.repository.WarehousePurchaseSellingRepository;
 import com.zl.erp.utils.CodeHelper;
 import com.zl.erp.utils.CommonDataUtils;
 import com.zl.erp.utils.EasyPoiUtils;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.ws.Response;
 import java.util.*;
 
 /**
@@ -38,10 +41,19 @@ public class WarehouseOrderService {
 
     private final PurchaseSellingOrderRepository sellingOrderRepository;
 
+    private final WarehousePurchaseSellingRepository sellingRepository;
+
+    private final WarehouseInventoryService inventoryService;
+
+    private final FinanceFlowRecordRepository financeFlowRepository;
+
     @Autowired
-    public WarehouseOrderService(WarehouseOrderRepository orderRepository, PurchaseSellingOrderRepository sellingOrderRepository) {
+    public WarehouseOrderService(WarehouseOrderRepository orderRepository, PurchaseSellingOrderRepository sellingOrderRepository, WarehousePurchaseSellingRepository sellingRepository, WarehouseInventoryService inventoryService, FinanceFlowRecordRepository financeFlowRepository) {
         this.orderRepository = orderRepository;
         this.sellingOrderRepository = sellingOrderRepository;
+        this.sellingRepository = sellingRepository;
+        this.inventoryService = inventoryService;
+        this.financeFlowRepository = financeFlowRepository;
     }
 
     /**
@@ -129,6 +141,73 @@ public class WarehouseOrderService {
             return CommonDataUtils.responseSuccess();
         } catch (Exception ex) {
             log.error("[订单详情]查询异常：{}", ex);
+            throw ex;
+        }
+    }
+
+    /**
+     * 发货
+     *
+     * @param requestData 请求入参
+     * @return 结果
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseData doDelivered(RequestData<WarehouseOrderEntity> requestData) {
+        WarehouseOrderEntity orderParams = requestData.getBody();
+        if (CodeHelper.isNull(orderParams.getOrderId())) {
+            return CommonDataUtils.responseFailure(CommonConstants.ERROR_PARAMS);
+        }
+        try {
+            WarehouseOrderEntity orderInfo = orderRepository.getByOrderId(orderParams.getOrderId());
+            WarehousePurchaseSellingRecordEntity record = new WarehousePurchaseSellingRecordEntity();
+            String tradeType = orderInfo.getTradeType();
+            if (!CommonConstants.ORDER_PLACED.equals(tradeType)) {
+                return CommonDataUtils.responseFailure();
+            }
+            record.setConsumerId(orderInfo.getConsumerId());
+            record.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
+            record.setOrderId(orderInfo.getOrderId());
+            record.setProductKindId(orderInfo.getProductKindId());
+            record.setStockNum(orderInfo.getStockNum());
+            record.setManageType(Integer.parseInt(CommonConstants.ORDER_DELIVER_GOODS));
+            record.setPurchasePrice(orderInfo.getPurchasePrice());
+            MaterialKindManageEntity materialKindCache = inventoryService.getMaterialKindCache(String.valueOf(orderInfo.getProductKindId()));
+            record.setSellingPrice(materialKindCache.getSellingPrice());
+            sellingRepository.save(record);
+            sellingOrderRepository.updateOrderInfoByOrderId(CommonConstants.ORDER_DELIVER_GOODS, orderInfo.getOrderId());
+            return CommonDataUtils.responseSuccess();
+        } catch (Exception ex) {
+            log.error("[发货]异常信息：{}", ex);
+            throw ex;
+        }
+    }
+
+    /**
+     * 支付
+     *
+     * @param requestData 请求入参
+     * @return 结果
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseData doPayment(RequestData<WarehouseOrderEntity> requestData) {
+        WarehouseOrderEntity orderParams = requestData.getBody();
+        if (CodeHelper.isNull(orderParams.getOrderId())) {
+            return CommonDataUtils.responseFailure(CommonConstants.ERROR_PARAMS);
+        }
+        try {
+            PurchaseSellingOrderRecordEntity orderRecord = sellingOrderRepository.getByOrderId(orderParams.getOrderId());
+            orderRecord.setTradeType(CommonConstants.ORDER_PAY);
+            sellingOrderRepository.save(orderRecord);
+            FinanceFlowRecordEntity flowRecord = new FinanceFlowRecordEntity();
+            flowRecord.setFlowNumber(CommonDataUtils.getUUID());
+            flowRecord.setFlowAmount(orderRecord.getTotalAmount());
+            flowRecord.setFlowType(orderRecord.getManageType());
+            flowRecord.setFlowTime(CommonDataUtils.getFormatDateString(new Date()));
+            flowRecord.setConsumerId(orderRecord.getConsumerId());
+            financeFlowRepository.save(flowRecord);
+            return CommonDataUtils.responseSuccess();
+        } catch (Exception ex) {
+            log.error("[发货]异常信息：{}", ex);
             throw ex;
         }
     }

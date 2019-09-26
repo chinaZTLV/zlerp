@@ -23,6 +23,12 @@ public class WarehousePurchaseSellingRecordEntity {
     private Integer recordId;
 
     /**
+     * 订单ID
+     */
+    @Column(name = "order_id")
+    private Integer orderId;
+
+    /**
      * 物料类型编号
      */
     @Column(name = "product_kind_id")

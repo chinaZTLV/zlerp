@@ -60,7 +60,7 @@ public class WarehouseOrderController extends BaseController {
      * 查看订单管理详情信息
      *
      * @param requestData 请求入参
-     * @return 客户信息
+     * @return 订单管理详情
      */
     @ApiOperation(value = "查看订单管理详情信息")
     @PostMapping("/getWarehouseOrderDetail")
@@ -72,11 +72,35 @@ public class WarehouseOrderController extends BaseController {
      * 删除订单
      *
      * @param requestData 请求入参
-     * @return 客户信息
+     * @return 执行结果
      */
     @ApiOperation(value = "删除订单")
     @PostMapping("/deleteWarehouseOrderById")
     public Message deleteWarehouseOrderById(@RequestBody RequestData<WarehouseOrderEntity> requestData) {
         return convert(requestData.getHeader(), orderService.deleteWarehouseOrderById(requestData));
+    }
+
+    /**
+     * 发货
+     *
+     * @param requestData 请求入参
+     * @return 执行结果
+     */
+    @ApiOperation(value = "发货")
+    @PostMapping("/doDelivered")
+    public Message doDelivered(@RequestBody RequestData<WarehouseOrderEntity> requestData) {
+        return convert(requestData.getHeader(), orderService.doDelivered(requestData));
+    }
+
+    /**
+     * 已支付
+     *
+     * @param requestData 请求入参
+     * @return 执行结果
+     */
+    @ApiOperation(value = "已支付")
+    @PostMapping("/doPayment")
+    public Message doPayment(@RequestBody RequestData<WarehouseOrderEntity> requestData) {
+        return convert(requestData.getHeader(), orderService.doPayment(requestData));
     }
 }

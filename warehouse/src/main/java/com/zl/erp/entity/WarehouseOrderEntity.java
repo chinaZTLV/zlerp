@@ -104,7 +104,7 @@ public class WarehouseOrderEntity {
     /**
      * 客户ID
      */
-    private String consumerId;
+    private Integer consumerId;
 
     /**
      * 订单创建时间

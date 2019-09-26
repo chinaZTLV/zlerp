@@ -139,12 +139,19 @@ public class WarehouseInventoryService {
             if (ownTradeTypeList.contains(purchaseSellParams.getManageType())) {
                 unitPrice = new BigDecimal(kindManage.getPurchasePrice());
                 purchaseSellParams.setConsumerId(kindManage.getConsumerId());
+                // 进货、退还厂方 无折扣、折扣金额、利润等
+                purchaseSellParams.setDiscount("1");
+                purchaseSellParams.setDiscountAmount("0");
+                purchaseSellParams.setNetReceipt("0");
             } else {
                 unitPrice = new BigDecimal(kindManage.getSellingPrice());
+                BigDecimal totalDiscountAmount = getOrderDiscountAmount(purchaseSellParams, unitPrice);
+                purchaseSellParams.setDiscountAmount(CommonDataUtils.formatToString(totalDiscountAmount));
+                BigDecimal purchaseSellAmount = getOrderAmount(purchaseSellParams, new BigDecimal(kindManage.getPurchasePrice()));
+                purchaseSellParams.setNetReceipt(CommonDataUtils.formatToString(totalDiscountAmount.subtract(purchaseSellAmount)));
             }
             purchaseSellParams.setTotalAmount(CommonDataUtils.formatToString(getOrderAmount(purchaseSellParams, unitPrice)));
             purchaseSellParams.setUnitPrice(CommonDataUtils.formatToString(unitPrice));
-            purchaseSellParams.setDiscountAmount(CommonDataUtils.formatToString(getOrderDiscountAmount(purchaseSellParams, unitPrice)));
             return CommonDataUtils.responseSuccess(purchaseSellParams);
         } catch (Exception ex) {
             log.error("[获取订单总金额]异常：{}", ex);
@@ -196,6 +203,10 @@ public class WarehouseInventoryService {
             BigDecimal unitPrice;
             MaterialKindManageEntity kindManage = JSON.parseObject(cacheJson, MaterialKindManageEntity.class);
             if (ownTradeTypeList.contains(purchaseSellParams.getManageType())) {
+                // 进货、退还厂方 无折扣、折扣金额、利润等
+                purchaseSellParams.setDiscount("1");
+                purchaseSellParams.setDiscountAmount("0");
+                purchaseSellParams.setNetReceipt("0");
                 unitPrice = new BigDecimal(kindManage.getPurchasePrice());
             } else {
                 unitPrice = new BigDecimal(kindManage.getSellingPrice());
@@ -207,7 +218,6 @@ public class WarehouseInventoryService {
             }
             purchaseSellParams.setPurchasePrice(kindManage.getPurchasePrice());
             purchaseSellParams.setTradeType(ORDER_PLACED);
-            purchaseSellParams.setTradeType("0");
             purchaseSellParams.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
             return CommonDataUtils.responseSuccess(sellingOrderRepository.save(purchaseSellParams));
         } catch (Exception ex) {
@@ -233,7 +243,7 @@ public class WarehouseInventoryService {
      * @param kindId 物料类型ID
      * @return 物料类型信息
      */
-    private MaterialKindManageEntity getMaterialKindCache(String kindId) {
+    MaterialKindManageEntity getMaterialKindCache(String kindId) {
         String cacheJson = getMaterialKindManageCacheMap().get(String.valueOf(kindId));
         return JSON.parseObject(cacheJson, MaterialKindManageEntity.class);
     }
