@@ -154,4 +154,14 @@ public class CommonDataUtils {
         String random = String.format("%03d", new Random().nextInt(1000));
         return sdf.format(new Date()) + random;
     }
+
+    /**
+     * 支付扣款-金额转换为负数入库
+     *
+     * @param amount 扣款金额
+     * @return -扣款金额
+     */
+    public static BigDecimal decimalToMinus(BigDecimal amount) {
+        return new BigDecimal("-" + amount.toString());
+    }
 }

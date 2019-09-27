@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.ws.Response;
+import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -196,11 +196,21 @@ public class WarehouseOrderService {
         }
         try {
             PurchaseSellingOrderRecordEntity orderRecord = sellingOrderRepository.getByOrderId(orderParams.getOrderId());
+            if (!CommonConstants.ORDER_DELIVER_GOODS.equals(orderRecord.getTradeType())) {
+                return CommonDataUtils.responseFailure("订单状态不是发货状态，请勿操作操作！");
+            }
             orderRecord.setTradeType(CommonConstants.ORDER_PAY);
             sellingOrderRepository.save(orderRecord);
             FinanceFlowRecordEntity flowRecord = new FinanceFlowRecordEntity();
             flowRecord.setFlowNumber(CommonDataUtils.getUUID());
-            flowRecord.setFlowAmount(orderRecord.getTotalAmount());
+            flowRecord.setOrderId(orderRecord.getOrderId());
+            flowRecord.setProductKindId(orderRecord.getProductKindId());
+            List<String> deductTypeList = Arrays.asList(String.valueOf(CommonConstants.MANAGE_TYPE_RETURNED_TO_FACTORY), String.valueOf(CommonConstants.MANAGE_TYPE_RETURNED_PURCHASE));
+            if (deductTypeList.contains(String.valueOf(orderRecord.getManageType()))) {
+                flowRecord.setFlowAmount(CommonDataUtils.formatToString(CommonDataUtils.decimalToMinus(new BigDecimal(orderRecord.getTotalAmount()))));
+            } else {
+                flowRecord.setFlowAmount(orderRecord.getTotalAmount());
+            }
             flowRecord.setFlowType(orderRecord.getManageType());
             flowRecord.setFlowTime(CommonDataUtils.getFormatDateString(new Date()));
             flowRecord.setConsumerId(orderRecord.getConsumerId());

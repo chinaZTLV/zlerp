@@ -31,6 +31,18 @@ public class FinanceFlowRecordEntity {
     private String flowNumber;
 
     /**
+     * 订单ID
+     */
+    @Column(name = "order_id")
+    private Integer orderId;
+
+    /**
+     * 产品类型
+     */
+    @Column(name = "product_kind_id")
+    private Integer productKindId;
+
+    /**
      * 流水金额
      */
     @Column(name = "flow_amount")
