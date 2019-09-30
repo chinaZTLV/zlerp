@@ -8,7 +8,11 @@ import com.zl.erp.common.db.FilterKeyword;
 import com.zl.erp.common.db.FilterOrder;
 import com.zl.erp.common.db.FilterTerm;
 import com.zl.erp.entity.ConsumerManageRecordEntity;
+import com.zl.erp.entity.MaterialKindManageEntity;
+import com.zl.erp.entity.WarehousePurchaseSellingRecordEntity;
 import com.zl.erp.repository.ConsumerManageRepository;
+import com.zl.erp.repository.MaterialKindManageRepository;
+import com.zl.erp.repository.WarehousePurchaseSellingRepository;
 import com.zl.erp.utils.CodeHelper;
 import com.zl.erp.utils.CommonDataUtils;
 import com.zl.erp.utils.EasyPoiUtils;
@@ -43,11 +47,17 @@ public class ConsumerManageService {
 
     private final BaseCacheService baseCacheService;
 
+    private final MaterialKindManageRepository kindManageRepository;
+
+    private final WarehousePurchaseSellingRepository sellingRepository;
+
     @Autowired
-    public ConsumerManageService(ConsumerManageRepository manageRepository, RedisService redisService, BaseCacheService baseCacheService) {
+    public ConsumerManageService(ConsumerManageRepository manageRepository, RedisService redisService, BaseCacheService baseCacheService, MaterialKindManageRepository kindManageRepository, WarehousePurchaseSellingRepository sellingRepository) {
         this.manageRepository = manageRepository;
         this.redisService = redisService;
         this.baseCacheService = baseCacheService;
+        this.kindManageRepository = kindManageRepository;
+        this.sellingRepository = sellingRepository;
     }
 
     /**
@@ -138,10 +148,20 @@ public class ConsumerManageService {
         ConsumerManageRecordEntity consumerParams = consumerRecord.getBody();
         try {
             assert consumerParams != null;
-            if (CodeHelper.isNull(consumerParams.getConsumerId())) {
+            if (CodeHelper.isNull(consumerParams.getConsumerId()) && CodeHelper.isNull(consumerParams.getConsumerType())) {
                 return CommonDataUtils.responseFailure(ERROR_PARAMS);
             }
-            // TODO 检查当前厂商信息是否存在物料信息
+            if (FACTORY_TYPE.equals(consumerParams.getConsumerType())) {
+                List<MaterialKindManageEntity> kindManageList = kindManageRepository.getAllByConsumerId(consumerParams.getConsumerId());
+                if (CodeHelper.isNotNullOrEmpty(kindManageList)) {
+                    return CommonDataUtils.responseFailure("该厂商存在物料信息，请勿删除！");
+                }
+            } else {
+                List<WarehousePurchaseSellingRecordEntity> sellingList = sellingRepository.queryAllByConsumerId(consumerParams.getConsumerId());
+                if (CodeHelper.isNotNullOrEmpty(sellingList)) {
+                    return CommonDataUtils.responseFailure("该客户存在订单信息，请勿删除！");
+                }
+            }
             manageRepository.deleteById(consumerParams.getConsumerId());
             redisService.hdel(REDIS_CACHE_CONSUMER_KEY, String.valueOf(consumerParams.getConsumerId()));
             return CommonDataUtils.responseSuccess();

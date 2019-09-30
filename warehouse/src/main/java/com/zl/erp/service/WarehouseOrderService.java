@@ -9,10 +9,7 @@ import com.zl.erp.common.db.FilterOrder;
 import com.zl.erp.common.db.FilterTerm;
 import com.zl.erp.constants.CommonConstants;
 import com.zl.erp.entity.*;
-import com.zl.erp.repository.FinanceFlowRecordRepository;
-import com.zl.erp.repository.PurchaseSellingOrderRepository;
-import com.zl.erp.repository.WarehouseOrderRepository;
-import com.zl.erp.repository.WarehousePurchaseSellingRepository;
+import com.zl.erp.repository.*;
 import com.zl.erp.utils.CodeHelper;
 import com.zl.erp.utils.CommonDataUtils;
 import com.zl.erp.utils.EasyPoiUtils;
@@ -27,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.util.*;
+
+import static com.zl.erp.constants.CommonConstants.*;
 
 /**
  * @Description: 订单
@@ -47,13 +46,16 @@ public class WarehouseOrderService {
 
     private final FinanceFlowRecordRepository financeFlowRepository;
 
+    private final WarehouseInventoryManageRepository inventoryRepository;
+
     @Autowired
-    public WarehouseOrderService(WarehouseOrderRepository orderRepository, PurchaseSellingOrderRepository sellingOrderRepository, WarehousePurchaseSellingRepository sellingRepository, WarehouseInventoryService inventoryService, FinanceFlowRecordRepository financeFlowRepository) {
+    public WarehouseOrderService(WarehouseOrderRepository orderRepository, PurchaseSellingOrderRepository sellingOrderRepository, WarehousePurchaseSellingRepository sellingRepository, WarehouseInventoryService inventoryService, FinanceFlowRecordRepository financeFlowRepository, WarehouseInventoryManageRepository inventoryRepository) {
         this.orderRepository = orderRepository;
         this.sellingOrderRepository = sellingOrderRepository;
         this.sellingRepository = sellingRepository;
         this.inventoryService = inventoryService;
         this.financeFlowRepository = financeFlowRepository;
+        this.inventoryRepository = inventoryRepository;
     }
 
     /**
@@ -152,13 +154,14 @@ public class WarehouseOrderService {
      * @return 结果
      */
     @Transactional(rollbackFor = Exception.class)
-    public ResponseData doDelivered(RequestData<WarehouseOrderEntity> requestData) {
+    public ResponseData doDelivered(RequestData<WarehouseOrderEntity> requestData) throws Exception {
         WarehouseOrderEntity orderParams = requestData.getBody();
         if (CodeHelper.isNull(orderParams.getOrderId())) {
             return CommonDataUtils.responseFailure(CommonConstants.ERROR_PARAMS);
         }
         try {
             WarehouseOrderEntity orderInfo = orderRepository.getByOrderId(orderParams.getOrderId());
+            // 新增进售货记录
             WarehousePurchaseSellingRecordEntity record = new WarehousePurchaseSellingRecordEntity();
             String tradeType = orderInfo.getTradeType();
             if (!CommonConstants.ORDER_PLACED.equals(tradeType)) {
@@ -175,11 +178,84 @@ public class WarehouseOrderService {
             record.setSellingPrice(materialKindCache.getSellingPrice());
             sellingRepository.save(record);
             sellingOrderRepository.updateOrderInfoByOrderId(CommonConstants.ORDER_DELIVER_GOODS, orderInfo.getOrderId());
+            // 更新或新增库存信息
+            boolean inventoryFlag = addWarehouseInventoryManage(orderInfo);
+            if (!inventoryFlag) {
+                throw new Exception("新增库存信息异常");
+            }
             return CommonDataUtils.responseSuccess();
         } catch (Exception ex) {
             log.error("[发货]异常信息：{}", ex);
             throw ex;
         }
+    }
+
+    /**
+     * 新增库存信息
+     *
+     * @param orderInfo 订单
+     * @return boolean true: 新增完毕
+     */
+    @Transactional
+    public boolean addWarehouseInventoryManage(WarehouseOrderEntity orderInfo) {
+        WarehouseInventoryManageEntity inventoryManage = inventoryRepository.getByProductKindId(orderInfo.getProductKindId());
+        boolean newInventoryFlag = false;
+        if (CodeHelper.isNull(inventoryManage)) {
+            inventoryManage = new WarehouseInventoryManageEntity();
+            newInventoryFlag = true;
+        }
+        MaterialKindManageEntity kindManage = inventoryService.getMaterialKindCache(String.valueOf(orderInfo.getProductKindId()));
+        BigDecimal sellingPrice = new BigDecimal(kindManage.getSellingPrice());
+        switch (Integer.parseInt(orderInfo.getManageType())) {
+            case MANAGE_TYPE_RETURNED_TO_FACTORY:
+                inventoryManage(orderInfo, inventoryManage, sellingPrice, newInventoryFlag, MANAGE_TYPE_RETURNED_TO_FACTORY);
+                return true;
+            case MANAGE_TYPE_PURCHASE:
+                inventoryManage(orderInfo, inventoryManage, sellingPrice, newInventoryFlag, MANAGE_TYPE_PURCHASE);
+                return true;
+            case MANAGE_TYPE_SALES:
+                inventoryManage(orderInfo, inventoryManage, sellingPrice, newInventoryFlag, MANAGE_TYPE_SALES);
+                return true;
+            case MANAGE_TYPE_RETURNED_PURCHASE:
+                inventoryManage(orderInfo, inventoryManage, sellingPrice, newInventoryFlag, MANAGE_TYPE_RETURNED_PURCHASE);
+                return true;
+            default:
+                break;
+        }
+        return false;
+    }
+
+    /**
+     * @param orderInfo       订单信息
+     * @param inventoryManage 库存信息
+     * @param sellingPrice    售价
+     * @param newFlag         标志
+     * @param manageType      类型
+     */
+    @Transactional
+    public void inventoryManage(WarehouseOrderEntity orderInfo, WarehouseInventoryManageEntity inventoryManage, BigDecimal sellingPrice, boolean newFlag, int manageType) {
+        String stockNum = orderInfo.getStockNum();
+        String totalAmount;
+        if (newFlag) {
+            inventoryManage.setProductKindId(orderInfo.getProductKindId());
+            inventoryManage.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
+            totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(new BigDecimal(orderInfo.getStockNum())));
+        } else {
+            if (MANAGE_TYPE_RETURNED_TO_FACTORY == manageType || MANAGE_TYPE_SALES == manageType) {
+                Integer stockNums = Integer.parseInt(inventoryManage.getStockNum()) - Integer.parseInt(orderInfo.getStockNum());
+                stockNum = String.valueOf(stockNums);
+                totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(new BigDecimal(stockNum)));
+            } else if (MANAGE_TYPE_RETURNED_PURCHASE == manageType) {
+                Integer stockNums = Integer.parseInt(inventoryManage.getStockNum()) + Integer.parseInt(orderInfo.getStockNum());
+                stockNum = String.valueOf(stockNums);
+                totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(new BigDecimal(stockNum)));
+            } else {
+                return;
+            }
+        }
+        inventoryManage.setStockNum(stockNum);
+        inventoryManage.setTotalAmount(totalAmount);
+        inventoryRepository.save(inventoryManage);
     }
 
     /**
@@ -201,11 +277,12 @@ public class WarehouseOrderService {
             }
             orderRecord.setTradeType(CommonConstants.ORDER_PAY);
             sellingOrderRepository.save(orderRecord);
+            // 新增流水信息
             FinanceFlowRecordEntity flowRecord = new FinanceFlowRecordEntity();
             flowRecord.setFlowNumber(CommonDataUtils.getUUID());
             flowRecord.setOrderId(orderRecord.getOrderId());
             flowRecord.setProductKindId(orderRecord.getProductKindId());
-            List<String> deductTypeList = Arrays.asList(String.valueOf(CommonConstants.MANAGE_TYPE_RETURNED_TO_FACTORY), String.valueOf(CommonConstants.MANAGE_TYPE_RETURNED_PURCHASE));
+            List<String> deductTypeList = Arrays.asList(String.valueOf(MANAGE_TYPE_RETURNED_TO_FACTORY), String.valueOf(CommonConstants.MANAGE_TYPE_RETURNED_PURCHASE));
             if (deductTypeList.contains(String.valueOf(orderRecord.getManageType()))) {
                 flowRecord.setFlowAmount(CommonDataUtils.formatToString(CommonDataUtils.decimalToMinus(new BigDecimal(orderRecord.getTotalAmount()))));
             } else {

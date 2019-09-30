@@ -4,6 +4,7 @@ import com.zl.erp.common.*;
 import com.zl.erp.entity.WarehouseInventoryEntity;
 import com.zl.erp.entity.WarehouseOrderEntity;
 import com.zl.erp.service.WarehouseOrderService;
+import com.zl.erp.utils.CommonDataUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -89,7 +90,12 @@ public class WarehouseOrderController extends BaseController {
     @ApiOperation(value = "发货")
     @PostMapping("/doDelivered")
     public Message doDelivered(@RequestBody RequestData<WarehouseOrderEntity> requestData) {
-        return convert(requestData.getHeader(), orderService.doDelivered(requestData));
+        try {
+            return convert(requestData.getHeader(), orderService.doDelivered(requestData));
+        } catch (Exception e) {
+            log.error("[发货失败]：{}", e);
+            return convert(requestData.getHeader(), CommonDataUtils.responseFailure());
+        }
     }
 
     /**

@@ -31,8 +31,17 @@ public interface MaterialKindManageRepository extends BaseRepository<MaterialKin
 
     /**
      * 根据名称获取物料类型
+     *
      * @param kindName 物料类型名称
      * @return MaterialKindManageEntity
      */
     MaterialKindManageEntity getAllByProductKindName(String kindName);
+
+    /**
+     * 获取该用户下是否有物料信息
+     *
+     * @param consumerId 厂方ID
+     * @return 物料信息
+     */
+    List<MaterialKindManageEntity> getAllByConsumerId(Integer consumerId);
 }
