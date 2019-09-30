@@ -159,35 +159,30 @@ public class WarehouseOrderService {
         if (CodeHelper.isNull(orderParams.getOrderId())) {
             return CommonDataUtils.responseFailure(CommonConstants.ERROR_PARAMS);
         }
-        try {
-            WarehouseOrderEntity orderInfo = orderRepository.getByOrderId(orderParams.getOrderId());
-            // 新增进售货记录
-            WarehousePurchaseSellingRecordEntity record = new WarehousePurchaseSellingRecordEntity();
-            String tradeType = orderInfo.getTradeType();
-            if (!CommonConstants.ORDER_PLACED.equals(tradeType)) {
-                return CommonDataUtils.responseFailure();
-            }
-            record.setConsumerId(orderInfo.getConsumerId());
-            record.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
-            record.setOrderId(orderInfo.getOrderId());
-            record.setProductKindId(orderInfo.getProductKindId());
-            record.setStockNum(orderInfo.getStockNum());
-            record.setManageType(CommonConstants.ORDER_DELIVER_GOODS);
-            record.setPurchasePrice(orderInfo.getPurchasePrice());
-            MaterialKindManageEntity materialKindCache = inventoryService.getMaterialKindCache(String.valueOf(orderInfo.getProductKindId()));
-            record.setSellingPrice(materialKindCache.getSellingPrice());
-            sellingRepository.save(record);
-            sellingOrderRepository.updateOrderInfoByOrderId(CommonConstants.ORDER_DELIVER_GOODS, orderInfo.getOrderId());
-            // 更新或新增库存信息
-            boolean inventoryFlag = addWarehouseInventoryManage(orderInfo);
-            if (!inventoryFlag) {
-                throw new Exception("新增库存信息异常");
-            }
-            return CommonDataUtils.responseSuccess();
-        } catch (Exception ex) {
-            log.error("[发货]异常信息：{}", ex);
-            throw ex;
+        WarehouseOrderEntity orderInfo = orderRepository.getByOrderId(orderParams.getOrderId());
+        // 新增进售货记录
+        WarehousePurchaseSellingRecordEntity record = new WarehousePurchaseSellingRecordEntity();
+        String tradeType = orderInfo.getTradeType();
+        if (!CommonConstants.ORDER_PLACED.equals(tradeType)) {
+            return CommonDataUtils.responseFailure();
         }
+        record.setConsumerId(orderInfo.getConsumerId());
+        record.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
+        record.setOrderId(orderInfo.getOrderId());
+        record.setProductKindId(orderInfo.getProductKindId());
+        record.setStockNum(orderInfo.getStockNum());
+        record.setManageType(CommonConstants.ORDER_DELIVER_GOODS);
+        record.setPurchasePrice(orderInfo.getPurchasePrice());
+        MaterialKindManageEntity materialKindCache = inventoryService.getMaterialKindCache(String.valueOf(orderInfo.getProductKindId()));
+        record.setSellingPrice(materialKindCache.getSellingPrice());
+        sellingRepository.save(record);
+        sellingOrderRepository.updateOrderInfoByOrderId(CommonConstants.ORDER_DELIVER_GOODS, orderInfo.getOrderId());
+        // 更新或新增库存信息
+        boolean inventoryFlag = addWarehouseInventoryManage(orderInfo);
+        if (!inventoryFlag) {
+            throw new Exception("新增库存信息异常");
+        }
+        return CommonDataUtils.responseSuccess();
     }
 
     /**
@@ -196,8 +191,7 @@ public class WarehouseOrderService {
      * @param orderInfo 订单
      * @return boolean true: 新增完毕
      */
-    @Transactional
-    public boolean addWarehouseInventoryManage(WarehouseOrderEntity orderInfo) {
+    private boolean addWarehouseInventoryManage(WarehouseOrderEntity orderInfo) {
         WarehouseInventoryManageEntity inventoryManage = inventoryRepository.getByProductKindId(orderInfo.getProductKindId());
         boolean newInventoryFlag = false;
         if (CodeHelper.isNull(inventoryManage)) {
@@ -232,8 +226,7 @@ public class WarehouseOrderService {
      * @param newFlag         标志
      * @param manageType      类型
      */
-    @Transactional
-    public void inventoryManage(WarehouseOrderEntity orderInfo, WarehouseInventoryManageEntity inventoryManage, BigDecimal sellingPrice, boolean newFlag, int manageType) {
+    private void inventoryManage(WarehouseOrderEntity orderInfo, WarehouseInventoryManageEntity inventoryManage, BigDecimal sellingPrice, boolean newFlag, int manageType) {
         String stockNum = orderInfo.getStockNum();
         String totalAmount;
         if (newFlag) {
