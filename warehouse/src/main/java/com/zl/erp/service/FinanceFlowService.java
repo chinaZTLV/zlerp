@@ -106,7 +106,7 @@ public class FinanceFlowService {
      * @param key key
      * @return value
      */
-    public String getFlowTypeMap(String key) {
+    private String getFlowTypeMap(String key) {
         Map<String, String> flowTypeMap = new HashMap<>(4);
         flowTypeMap.put("0", "退还厂方");
         flowTypeMap.put("2", "售货");
