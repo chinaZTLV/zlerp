@@ -39,6 +39,8 @@ public final class EasyPoiUtils {
             response.setCharacterEncoding("UTF-8");
             response.setHeader("content-Type", "application/vnd.ms-excel");
             response.setHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(fileName, "UTF-8"));
+            // 解决跨域问题
+            response.setHeader("Access-Control-Allow-Origin", "*");
             workbook.write(response.getOutputStream());
         } catch (IOException e) {
             throw new RuntimeException(e);
