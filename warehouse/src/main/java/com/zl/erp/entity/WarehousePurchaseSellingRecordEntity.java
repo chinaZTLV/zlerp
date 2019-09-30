@@ -35,6 +35,18 @@ public class WarehousePurchaseSellingRecordEntity {
     private Integer productKindId;
 
     /**
+     * 物料类型
+     */
+    @Transient
+    private  String productKindName;
+
+    /**
+     * 物料类型
+     */
+    @Transient
+    private  String consumerName;
+
+    /**
      * 数量
      */
     @Column(name = "stock_num")
@@ -44,7 +56,7 @@ public class WarehousePurchaseSellingRecordEntity {
      * 仓管类型 0：退还厂方、1：进货、2：售货、3：退货
      */
     @Column(name = "manage_type")
-    private Integer manageType;
+    private String manageType;
 
     /**
      * 物料进价

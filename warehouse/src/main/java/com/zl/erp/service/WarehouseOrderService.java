@@ -172,7 +172,7 @@ public class WarehouseOrderService {
             record.setOrderId(orderInfo.getOrderId());
             record.setProductKindId(orderInfo.getProductKindId());
             record.setStockNum(orderInfo.getStockNum());
-            record.setManageType(Integer.parseInt(CommonConstants.ORDER_DELIVER_GOODS));
+            record.setManageType(CommonConstants.ORDER_DELIVER_GOODS);
             record.setPurchasePrice(orderInfo.getPurchasePrice());
             MaterialKindManageEntity materialKindCache = inventoryService.getMaterialKindCache(String.valueOf(orderInfo.getProductKindId()));
             record.setSellingPrice(materialKindCache.getSellingPrice());
