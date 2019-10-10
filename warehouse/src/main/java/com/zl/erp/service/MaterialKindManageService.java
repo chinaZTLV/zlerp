@@ -11,8 +11,10 @@ import com.zl.erp.common.db.FilterTerm;
 import com.zl.erp.constants.CommonConstants;
 import com.zl.erp.entity.ConsumerManageRecordEntity;
 import com.zl.erp.entity.MaterialKindManageEntity;
+import com.zl.erp.entity.WarehouseInventoryManageEntity;
 import com.zl.erp.repository.ConsumerManageRepository;
 import com.zl.erp.repository.MaterialKindManageRepository;
+import com.zl.erp.repository.WarehouseInventoryManageRepository;
 import com.zl.erp.utils.CodeHelper;
 import com.zl.erp.utils.CommonDataUtils;
 import com.zl.erp.utils.EasyPoiUtils;
@@ -46,12 +48,15 @@ public class MaterialKindManageService {
 
     private final BaseCacheService baseCacheService;
 
+    private final WarehouseInventoryManageRepository manageRepository;
+
     @Autowired
-    public MaterialKindManageService(ConsumerManageRepository consumerRepository, MaterialKindManageRepository materialRepository, RedisService redisService, BaseCacheService baseCacheService) {
+    public MaterialKindManageService(ConsumerManageRepository consumerRepository, MaterialKindManageRepository materialRepository, RedisService redisService, BaseCacheService baseCacheService, WarehouseInventoryManageRepository manageRepository) {
         this.consumerRepository = consumerRepository;
         this.materialRepository = materialRepository;
         this.redisService = redisService;
         this.baseCacheService = baseCacheService;
+        this.manageRepository = manageRepository;
     }
 
     /**
@@ -189,7 +194,10 @@ public class MaterialKindManageService {
         }
         try {
             Integer productKindId = materialKindParams.getProductKindId();
-            // TODO 检查库存中是否存在该类型的数据
+            WarehouseInventoryManageEntity checkExists = manageRepository.getByProductKindId(productKindId);
+            if (CodeHelper.isNotNull(checkExists)) {
+                return CommonDataUtils.responseFailure("库存中存在该物料的信息，请勿删除！");
+            }
             materialRepository.deleteById(productKindId);
             redisService.hdel(REDIS_CACHE_CONSUMER_KEY, String.valueOf(productKindId));
             redisService.hdel(REDIS_CACHE_KIND_INFO_KEY, String.valueOf(productKindId));

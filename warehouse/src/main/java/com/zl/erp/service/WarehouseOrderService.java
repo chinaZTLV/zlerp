@@ -135,10 +135,13 @@ public class WarehouseOrderService {
     @Transactional(rollbackFor = Exception.class)
     public ResponseData deleteWarehouseOrderById(RequestData<WarehouseOrderEntity> requestData) {
         WarehouseOrderEntity orderParams = requestData.getBody();
-        if (CodeHelper.isNull(orderParams.getOrderId())) {
+        if (CodeHelper.isNull(orderParams.getOrderId()) || CodeHelper.isNull(orderParams.getTradeType())) {
             return CommonDataUtils.responseFailure(CommonConstants.ERROR_PARAMS);
         }
         try {
+            if (!ORDER_PLACED.equals(orderParams.getTradeType())) {
+                return CommonDataUtils.responseFailure("当前订单状态不支持删除！");
+            }
             sellingOrderRepository.deleteById(orderParams.getOrderId());
             return CommonDataUtils.responseSuccess();
         } catch (Exception ex) {
