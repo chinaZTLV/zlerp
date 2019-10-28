@@ -224,6 +224,7 @@ public class WarehouseInventoryService {
                 params.setNetReceipt(CommonDataUtils.formatToString(sellingPrice.subtract(purchasePrice)));
             }
             BigDecimal orderAmount = getOrderAmount(params, unitPrice);
+            params.setUnitPrice(CommonDataUtils.formatToString(unitPrice));
             params.setTotalAmount(CommonDataUtils.formatToString(orderAmount));
             params.setPurchasePrice(kindManage.getPurchasePrice());
             params.setTradeType(ORDER_PLACED);
@@ -243,7 +244,7 @@ public class WarehouseInventoryService {
      */
     private boolean checkPlacingAnOrderParams(PurchaseSellingOrderRecordEntity purchaseSellParams) {
         return CodeHelper.isNullOrEmpty(purchaseSellParams.getDiscount()) || CodeHelper.isNull(purchaseSellParams.getProductKindId())
-                || CodeHelper.isNullOrEmpty(purchaseSellParams.getStockNum());
+                || CodeHelper.isNullOrEmpty(purchaseSellParams.getStockNum()) || CodeHelper.isNull(purchaseSellParams.getManageType());
     }
 
     /**

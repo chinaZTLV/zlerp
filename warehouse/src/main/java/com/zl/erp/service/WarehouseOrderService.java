@@ -240,13 +240,11 @@ public class WarehouseOrderService {
             totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(new BigDecimal(orderInfo.getStockNum())));
         } else {
             if (MANAGE_TYPE_RETURNED_TO_FACTORY == manageType || MANAGE_TYPE_SALES == manageType) {
-                Integer stockNums = Integer.parseInt(inventoryManage.getStockNum()) - Integer.parseInt(orderInfo.getStockNum());
-                stockNum = String.valueOf(stockNums);
-                totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(new BigDecimal(stockNum)));
+                BigDecimal stockNums = new BigDecimal(inventoryManage.getStockNum()).subtract(new BigDecimal(orderInfo.getStockNum()));
+                totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(stockNums));
             } else if (MANAGE_TYPE_RETURNED_PURCHASE == manageType) {
-                Integer stockNums = Integer.parseInt(inventoryManage.getStockNum()) + Integer.parseInt(orderInfo.getStockNum());
-                stockNum = String.valueOf(stockNums);
-                totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(new BigDecimal(stockNum)));
+                BigDecimal stockNums = new BigDecimal(inventoryManage.getStockNum()).subtract(new BigDecimal(orderInfo.getStockNum()));
+                totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(stockNums));
             } else {
                 return;
             }

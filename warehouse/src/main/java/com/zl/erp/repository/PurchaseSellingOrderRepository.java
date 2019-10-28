@@ -26,6 +26,6 @@ public interface PurchaseSellingOrderRepository extends BaseRepository<PurchaseS
      * @param orderId   订单ID
      */
     @Modifying
-    @Query(value = "UPDATE purchase_selling_order_record SET trade_type = ?1 WHERE order_id = ?3", nativeQuery = true)
+    @Query(value = "UPDATE purchase_selling_order_record SET trade_type = ?1 WHERE order_id = ?2", nativeQuery = true)
     void updateOrderInfoByOrderId(String tradeType, Integer orderId);
 }

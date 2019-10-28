@@ -124,16 +124,16 @@ public class FinanceFlowService {
      */
     private void splicingParameter(FinanceFlowEntity orderParams, List<FilterTerm> filterTerms) {
         if (CodeHelper.isNotNull(orderParams.getOrderId())) {
-            filterTerms.add(new FilterTerm("order_id", FilterKeyword.LK));
+            filterTerms.add(new FilterTerm("orderId", FilterKeyword.LK));
         }
         if (CodeHelper.isNotNullOrEmpty(orderParams.getConsumerName())) {
-            filterTerms.add(new FilterTerm("consumer_name", FilterKeyword.LK));
+            filterTerms.add(new FilterTerm("consumerName", FilterKeyword.LK));
         }
         if (CodeHelper.isNotNull(orderParams.getFlowType())) {
-            filterTerms.add(new FilterTerm("flow_type", FilterKeyword.EQ));
+            filterTerms.add(new FilterTerm("flowType", FilterKeyword.EQ));
         }
         if (CodeHelper.isNotNull(orderParams.getFlowId())) {
-            filterTerms.add(new FilterTerm("flow_id", FilterKeyword.EQ));
+            filterTerms.add(new FilterTerm("flowId", FilterKeyword.EQ));
         }
     }
 }

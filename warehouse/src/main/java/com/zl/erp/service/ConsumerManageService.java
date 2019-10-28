@@ -8,6 +8,7 @@ import com.zl.erp.common.db.FilterKeyword;
 import com.zl.erp.common.db.FilterOrder;
 import com.zl.erp.common.db.FilterTerm;
 import com.zl.erp.entity.ConsumerManageRecordEntity;
+import com.zl.erp.entity.DictionaryBean;
 import com.zl.erp.entity.MaterialKindManageEntity;
 import com.zl.erp.entity.WarehousePurchaseSellingRecordEntity;
 import com.zl.erp.repository.ConsumerManageRepository;
@@ -203,9 +204,14 @@ public class ConsumerManageService {
     public ResponseData getConsumerListByType() {
         try {
             List<ConsumerManageRecordEntity> consumerManageRecordList = manageRepository.getConsumerListByType();
-            Map<Integer, String> resultMap = new HashMap<>(consumerManageRecordList.size());
-            consumerManageRecordList.forEach(consumer -> resultMap.put(consumer.getConsumerId(), consumer.getConsumerName()));
-            return CommonDataUtils.responseSuccess(resultMap);
+            List<DictionaryBean> dictionaryBeans = new ArrayList<>();
+            consumerManageRecordList.forEach(consumer -> {
+                DictionaryBean dic = new DictionaryBean();
+                dic.setKey(consumer.getConsumerId());
+                dic.setValue(consumer.getConsumerName());
+                dictionaryBeans.add(dic);
+            });
+            return CommonDataUtils.responseSuccess(dictionaryBeans);
         } catch (Exception ex) {
             log.error("[获取厂方缓存信息出错]", ex);
         }

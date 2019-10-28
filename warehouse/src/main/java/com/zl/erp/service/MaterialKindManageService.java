@@ -8,6 +8,7 @@ import com.zl.erp.common.db.FilterKeyword;
 import com.zl.erp.common.db.FilterOrder;
 import com.zl.erp.common.db.FilterTerm;
 import com.zl.erp.entity.ConsumerManageRecordEntity;
+import com.zl.erp.entity.DictionaryBean;
 import com.zl.erp.entity.MaterialKindManageEntity;
 import com.zl.erp.entity.WarehouseInventoryManageEntity;
 import com.zl.erp.repository.ConsumerManageRepository;
@@ -177,12 +178,12 @@ public class MaterialKindManageService {
             if (CodeHelper.isNull(materialKindParams.getProductKindId())) {
                 Integer count = materialRepository.checkExistsByName(materialKindParams.getProductKindName());
                 if (count > 0) {
-                    return CommonDataUtils.responseSuccess(EXISTS_MATERIAL_NAME_ERROR);
+                    return CommonDataUtils.responseFailure(EXISTS_MATERIAL_NAME_ERROR);
                 }
             } else {
                 Integer count = materialRepository.checkExistsByNameAndId(materialKindParams.getProductKindName(), materialKindParams.getProductKindId());
                 if (count > 0) {
-                    return CommonDataUtils.responseSuccess(EXISTS_MATERIAL_NAME_ERROR);
+                    return CommonDataUtils.responseFailure(EXISTS_MATERIAL_NAME_ERROR);
                 }
             }
             MaterialKindManageEntity kindRecord = materialRepository.save(materialKindParams);
@@ -227,9 +228,14 @@ public class MaterialKindManageService {
     public ResponseData getMaterialKindListByType() {
         try {
             List<MaterialKindManageEntity> materialList = materialRepository.queryMaterialKindList();
-            Map<Integer, String> materialMap = new HashMap<>(materialList.size());
-            materialList.forEach(material -> materialMap.put(material.getProductKindId(), material.getProductKindName()));
-            return CommonDataUtils.responseSuccess(materialMap);
+            List<DictionaryBean> dictionaryBeans = new ArrayList<>();
+            materialList.forEach(material -> {
+                DictionaryBean dic = new DictionaryBean();
+                dic.setKey(material.getProductKindId());
+                dic.setValue(material.getProductKindName());
+                dictionaryBeans.add(dic);
+            });
+            return CommonDataUtils.responseSuccess(dictionaryBeans);
         } catch (Exception ex) {
             log.error("[获取物料类型缓存信息]出错:{}", ex);
         }
@@ -252,10 +258,10 @@ public class MaterialKindManageService {
                 }
             });
             kindManageParams.setConsumerIds(String.join(",", consumerIdList));
-            filterTerms.add(new FilterTerm("consumerName", FilterKeyword.IN));
+            filterTerms.add(new FilterTerm("consumerId", FilterKeyword.IN));
         }
         if (CodeHelper.isNotNull(kindManageParams.getProductKindName())) {
-            filterTerms.add(new FilterTerm("productKindName", FilterKeyword.EQ));
+            filterTerms.add(new FilterTerm("productKindName", FilterKeyword.LK));
         }
     }
 
