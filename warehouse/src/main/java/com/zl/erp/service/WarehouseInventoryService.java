@@ -181,6 +181,7 @@ public class WarehouseInventoryService {
         return totalAmount.subtract(getOrderAmount(purchaseSellParams, unitPrice));
     }
 
+
     /**
      * 下订单
      *
@@ -188,33 +189,42 @@ public class WarehouseInventoryService {
      * @return 执行结果
      */
     @Transactional(rollbackFor = Exception.class)
-    public ResponseData placingAnOrder(RequestData<PurchaseSellingOrderRecordEntity> requestData) {
+    public ResponseData placingAnOrderVersion2(RequestData<PurchaseSellingOrderRecordEntity> requestData) {
         PurchaseSellingOrderRecordEntity purchaseSellParams = requestData.getBody();
         if (checkPlacingAnOrderParams(purchaseSellParams)) {
             return CommonDataUtils.responseFailure(ERROR_PARAMS);
         }
         try {
-            List<Integer> ownTradeTypeList = Arrays.asList(MANAGE_TYPE_PURCHASE, MANAGE_TYPE_RETURNED_TO_FACTORY);
+            List<Integer> ownManageTypeList = Arrays.asList(MANAGE_TYPE_PURCHASE, MANAGE_TYPE_RETURNED_TO_FACTORY);
+            List<Integer> manageTypeList = Arrays.asList(MANAGE_TYPE_SALES, MANAGE_TYPE_RETURNED_TO_FACTORY);
+            if (manageTypeList.contains(purchaseSellParams.getManageType())) {
+                WarehouseInventoryEntity warehouseInventory = inventoryRepository.getByProductKindId(purchaseSellParams.getProductKindId());
+                int stockNum = CodeHelper.isNotNull(warehouseInventory) ? warehouseInventory.getStockNum() : 0;
+                if (Integer.parseInt(purchaseSellParams.getStockNum()) > stockNum) {
+                    return CommonDataUtils.responseFailure("库存不足！");
+                }
+            }
             BigDecimal unitPrice;
             MaterialKindManageEntity kindManage = materialRepository.getMaterialKindById(purchaseSellParams.getProductKindId());
-            if (ownTradeTypeList.contains(purchaseSellParams.getManageType())) {
+            if (ownManageTypeList.contains(purchaseSellParams.getManageType())) {
                 // 进货、退还厂方 无折扣、折扣金额、利润等
                 purchaseSellParams.setDiscount("100");
                 purchaseSellParams.setDiscountAmount("0");
                 purchaseSellParams.setNetReceipt("0");
+                // 插入一个默认的用户
+                purchaseSellParams.setConsumerId(0);
                 unitPrice = new BigDecimal(kindManage.getPurchasePrice());
             } else {
+                if (CodeHelper.isNull(purchaseSellParams.getConsumerId())) {
+                    return CommonDataUtils.responseFailure("请选择用户！");
+                }
                 unitPrice = new BigDecimal(kindManage.getSellingPrice());
             }
             BigDecimal orderAmount = getOrderAmount(purchaseSellParams, unitPrice);
-            BigDecimal totalAmount = new BigDecimal(purchaseSellParams.getTotalAmount());
-            if (totalAmount.compareTo(orderAmount) != 0) {
-                return CommonDataUtils.responseFailure("金额不一致！");
-            }
+            purchaseSellParams.setTotalAmount(CommonDataUtils.formatToString(orderAmount));
             purchaseSellParams.setPurchasePrice(kindManage.getPurchasePrice());
             purchaseSellParams.setTradeType(ORDER_PLACED);
             purchaseSellParams.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
-            purchaseSellParams.setConsumerId(kindManage.getConsumerId());
             return CommonDataUtils.responseSuccess(sellingOrderRepository.save(purchaseSellParams));
         } catch (Exception ex) {
             log.error("[下订单]异常信息:{}", ex);

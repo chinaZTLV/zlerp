@@ -91,7 +91,7 @@ public class WarehouseInventoryController extends BaseController {
     @PostMapping("/placingAnOrder")
     public Message placingAnOrder(@RequestBody RequestData<PurchaseSellingOrderRecordEntity> requestData) {
         try {
-            return convert(requestData.getHeader(), inventoryService.placingAnOrder(requestData));
+            return convert(requestData.getHeader(), inventoryService.placingAnOrderVersion2(requestData));
         } catch (Exception ex) {
             return convert(requestData.getHeader(), CommonDataUtils.responseFailure());
         }
