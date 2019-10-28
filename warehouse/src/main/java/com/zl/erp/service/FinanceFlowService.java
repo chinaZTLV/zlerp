@@ -62,6 +62,8 @@ public class FinanceFlowService {
             responsePageEntity.setTotalPage(pageResult.getTotalPages());
             responsePageEntity.setTotalCount((int) pageResult.getTotalElements());
             integrationData(resultList);
+            responsePageEntity.setPageIndex(requestDataPage.getPageIndex());
+            responsePageEntity.setPageSize(requestDataPage.getPageSize());
             responsePageEntity.setData(resultList);
             return responsePageEntity;
         } catch (Exception ex) {

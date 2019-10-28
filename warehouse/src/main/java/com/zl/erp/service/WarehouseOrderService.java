@@ -76,6 +76,8 @@ public class WarehouseOrderService {
             ResponseDataPage responsePageEntity = CommonDataUtils.successPageResponse();
             List<WarehouseOrderEntity> resultList = pageResult.getContent();
             integrationData(resultList);
+            responsePageEntity.setPageIndex(requestDataPage.getPageIndex());
+            responsePageEntity.setPageSize(requestDataPage.getPageSize());
             responsePageEntity.setData(resultList);
             responsePageEntity.setTotalCount((int) pageResult.getTotalElements());
             responsePageEntity.setTotalPage(pageResult.getTotalPages());
