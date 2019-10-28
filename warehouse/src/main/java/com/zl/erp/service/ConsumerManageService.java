@@ -27,7 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 
-import static com.zl.erp.constants.CommonConstants.*;
+import static com.zl.erp.constants.CommonConstants.ERROR_PARAMS;
+import static com.zl.erp.constants.CommonConstants.FACTORY_TYPE;
 
 /**
  * @Description: 客户管理
@@ -40,19 +41,13 @@ public class ConsumerManageService {
 
     private final ConsumerManageRepository manageRepository;
 
-    private final RedisService redisService;
-
-    private final BaseCacheService baseCacheService;
-
     private final MaterialKindManageRepository kindManageRepository;
 
     private final WarehousePurchaseSellingRepository sellingRepository;
 
     @Autowired
-    public ConsumerManageService(ConsumerManageRepository manageRepository, RedisService redisService, BaseCacheService baseCacheService, MaterialKindManageRepository kindManageRepository, WarehousePurchaseSellingRepository sellingRepository) {
+    public ConsumerManageService(ConsumerManageRepository manageRepository, MaterialKindManageRepository kindManageRepository, WarehousePurchaseSellingRepository sellingRepository) {
         this.manageRepository = manageRepository;
-        this.redisService = redisService;
-        this.baseCacheService = baseCacheService;
         this.kindManageRepository = kindManageRepository;
         this.sellingRepository = sellingRepository;
     }
@@ -125,7 +120,6 @@ public class ConsumerManageService {
                 params.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
             }
             ConsumerManageRecordEntity consumer = manageRepository.save(params);
-            redisService.hset(REDIS_CACHE_CONSUMER_KEY, String.valueOf(consumer.getConsumerId()), consumer.getConsumerName());
             return CommonDataUtils.responseSuccess(consumer);
         } catch (Exception ex) {
             log.error("[客户信息]新增异常：{}", ex);
@@ -159,7 +153,6 @@ public class ConsumerManageService {
                 }
             }
             manageRepository.deleteById(consumerParams.getConsumerId());
-            redisService.hdel(REDIS_CACHE_CONSUMER_KEY, String.valueOf(consumerParams.getConsumerId()));
             return CommonDataUtils.responseSuccess();
         } catch (Exception ex) {
             log.error("[删除客户信息]：{}", ex);
@@ -203,18 +196,6 @@ public class ConsumerManageService {
             log.error("[获取厂方缓存信息出错]", ex);
         }
         return CommonDataUtils.errorPageResponse();
-    }
-
-    /**
-     * 获取客户缓存信息
-     *
-     * @return 客户缓存信息
-     */
-    private Map<String, String> getConsumerCacheMap() {
-        if (!redisService.exists(REDIS_CACHE_CONSUMER_KEY)) {
-            baseCacheService.refreshBaseCache(REDIS_CACHE_CONSUMER_KEY);
-        }
-        return redisService.hgetall(REDIS_CACHE_CONSUMER_KEY);
     }
 
     /**

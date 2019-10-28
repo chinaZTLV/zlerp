@@ -44,13 +44,13 @@ public class WarehouseInventoryManageEntity {
     /**
      * 创建时间
      */
-    @Column(name = "create_time")
+    @Column(name = "create_time",updatable = false)
     private String createTime;
 
     /**
      * 更新时间
      */
-    @Column(name = "update_time")
+    @Column(name = "update_time",insertable = false)
     private String updateTime;
 
     /**

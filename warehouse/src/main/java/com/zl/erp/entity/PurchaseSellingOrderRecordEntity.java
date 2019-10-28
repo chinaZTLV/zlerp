@@ -3,9 +3,6 @@ package com.zl.erp.entity;
 import lombok.Data;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.util.Objects;
 
 /**
  * @Description: 订单管理
@@ -100,13 +97,13 @@ public class PurchaseSellingOrderRecordEntity {
     /**
      * 创建时间
      */
-    @Column(name = "create_time")
+    @Column(name = "create_time", updatable = false)
     private String createTime;
 
     /**
      * 交易时间
      */
-    @Column(name = "trade_time")
+    @Column(name = "trade_time", insertable = false)
     private String tradeTime;
 
     /**

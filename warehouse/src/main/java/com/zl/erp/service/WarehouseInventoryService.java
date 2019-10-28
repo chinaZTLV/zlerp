@@ -1,6 +1,5 @@
 package com.zl.erp.service;
 
-import com.alibaba.fastjson.JSON;
 import com.zl.erp.common.RequestData;
 import com.zl.erp.common.RequestDataPage;
 import com.zl.erp.common.ResponseData;
@@ -12,6 +11,7 @@ import com.zl.erp.constants.CommonConstants;
 import com.zl.erp.entity.MaterialKindManageEntity;
 import com.zl.erp.entity.PurchaseSellingOrderRecordEntity;
 import com.zl.erp.entity.WarehouseInventoryEntity;
+import com.zl.erp.repository.MaterialKindManageRepository;
 import com.zl.erp.repository.PurchaseSellingOrderRepository;
 import com.zl.erp.repository.WarehouseInventoryRepository;
 import com.zl.erp.utils.CodeHelper;
@@ -44,16 +44,13 @@ public class WarehouseInventoryService {
 
     private final PurchaseSellingOrderRepository sellingOrderRepository;
 
-    private final BaseCacheService cacheService;
-
-    private final RedisService redisService;
+    private final MaterialKindManageRepository materialRepository;
 
     @Autowired
-    public WarehouseInventoryService(WarehouseInventoryRepository inventoryRepository, PurchaseSellingOrderRepository sellingOrderRepository, BaseCacheService cacheService, RedisService redisService) {
+    public WarehouseInventoryService(WarehouseInventoryRepository inventoryRepository, PurchaseSellingOrderRepository sellingOrderRepository, MaterialKindManageRepository materialRepository) {
         this.inventoryRepository = inventoryRepository;
         this.sellingOrderRepository = sellingOrderRepository;
-        this.cacheService = cacheService;
-        this.redisService = redisService;
+        this.materialRepository = materialRepository;
     }
 
     /**
@@ -133,9 +130,7 @@ public class WarehouseInventoryService {
             return CommonDataUtils.responseFailure(CommonConstants.ERROR_PARAMS);
         }
         try {
-            Integer kindId = purchaseSellParams.getProductKindId();
-            String cacheJson = getMaterialKindManageCacheMap().get(String.valueOf(kindId));
-            MaterialKindManageEntity kindManage = JSON.parseObject(cacheJson, MaterialKindManageEntity.class);
+            MaterialKindManageEntity kindManage = materialRepository.getMaterialKindById(purchaseSellParams.getProductKindId());
             List<Integer> ownTradeTypeList = Arrays.asList(MANAGE_TYPE_PURCHASE, MANAGE_TYPE_RETURNED_TO_FACTORY);
             BigDecimal unitPrice;
             if (ownTradeTypeList.contains(purchaseSellParams.getManageType())) {
@@ -199,11 +194,9 @@ public class WarehouseInventoryService {
             return CommonDataUtils.responseFailure(ERROR_PARAMS);
         }
         try {
-            Integer kindId = purchaseSellParams.getProductKindId();
-            String cacheJson = getMaterialKindManageCacheMap().get(String.valueOf(kindId));
             List<Integer> ownTradeTypeList = Arrays.asList(MANAGE_TYPE_PURCHASE, MANAGE_TYPE_RETURNED_TO_FACTORY);
             BigDecimal unitPrice;
-            MaterialKindManageEntity kindManage = JSON.parseObject(cacheJson, MaterialKindManageEntity.class);
+            MaterialKindManageEntity kindManage = materialRepository.getMaterialKindById(purchaseSellParams.getProductKindId());
             if (ownTradeTypeList.contains(purchaseSellParams.getManageType())) {
                 // 进货、退还厂方 无折扣、折扣金额、利润等
                 purchaseSellParams.setDiscount("1");
@@ -237,29 +230,6 @@ public class WarehouseInventoryService {
     private boolean checkPlacingAnOrderParams(PurchaseSellingOrderRecordEntity purchaseSellParams) {
         return CodeHelper.isNullOrEmpty(purchaseSellParams.getDiscount()) || CodeHelper.isNull(purchaseSellParams.getProductKindId())
                 || CodeHelper.isNullOrEmpty(purchaseSellParams.getStockNum()) || CodeHelper.isNull(purchaseSellParams.getConsumerId());
-    }
-
-    /**
-     * 获取物料类型信息
-     *
-     * @param kindId 物料类型ID
-     * @return 物料类型信息
-     */
-    MaterialKindManageEntity getMaterialKindCache(String kindId) {
-        String cacheJson = getMaterialKindManageCacheMap().get(String.valueOf(kindId));
-        return JSON.parseObject(cacheJson, MaterialKindManageEntity.class);
-    }
-
-    /**
-     * 获取物料类型缓存信息
-     *
-     * @return 缓存信息
-     */
-    private Map<String, String> getMaterialKindManageCacheMap() {
-        if (!redisService.exists(REDIS_CACHE_KIND_INFO_KEY)) {
-            cacheService.refreshBaseCache(REDIS_CACHE_KIND_INFO_KEY);
-        }
-        return redisService.hgetall(REDIS_CACHE_KIND_INFO_KEY);
     }
 
     /**

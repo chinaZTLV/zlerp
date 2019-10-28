@@ -44,4 +44,11 @@ public interface MaterialKindManageRepository extends BaseRepository<MaterialKin
      * @return 物料信息
      */
     List<MaterialKindManageEntity> getAllByConsumerId(Integer consumerId);
+
+    /**
+     * 查询全部
+     * @return getAll
+     */
+    @Query(value = "SELECT * FROM material_kind_manage",nativeQuery = true)
+    List<MaterialKindManageEntity> queryMaterialKindList();
 }

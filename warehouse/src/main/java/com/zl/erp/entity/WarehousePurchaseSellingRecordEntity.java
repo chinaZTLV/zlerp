@@ -38,13 +38,13 @@ public class WarehousePurchaseSellingRecordEntity {
      * 物料类型
      */
     @Transient
-    private  String productKindName;
+    private String productKindName;
 
     /**
      * 物料类型
      */
     @Transient
-    private  String consumerName;
+    private String consumerName;
 
     /**
      * 数量
@@ -79,7 +79,7 @@ public class WarehousePurchaseSellingRecordEntity {
     /**
      * 创建时间
      */
-    @Column(name = "create_time")
+    @Column(name = "create_time", updatable = false)
     private String createTime;
 
     /**

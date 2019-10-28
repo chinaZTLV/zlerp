@@ -1,6 +1,5 @@
 package com.zl.erp.service;
 
-import com.alibaba.fastjson.JSON;
 import com.zl.erp.common.RequestData;
 import com.zl.erp.common.RequestDataPage;
 import com.zl.erp.common.ResponseData;
@@ -8,7 +7,6 @@ import com.zl.erp.common.ResponseDataPage;
 import com.zl.erp.common.db.FilterKeyword;
 import com.zl.erp.common.db.FilterOrder;
 import com.zl.erp.common.db.FilterTerm;
-import com.zl.erp.constants.CommonConstants;
 import com.zl.erp.entity.ConsumerManageRecordEntity;
 import com.zl.erp.entity.MaterialKindManageEntity;
 import com.zl.erp.entity.WarehouseInventoryManageEntity;
@@ -29,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 
-import static com.zl.erp.constants.CommonConstants.*;
+import static com.zl.erp.constants.CommonConstants.ERROR_PARAMS;
 
 /**
  * @Description: 物料管理
@@ -44,18 +42,12 @@ public class MaterialKindManageService {
 
     private final MaterialKindManageRepository materialRepository;
 
-    private final RedisService redisService;
-
-    private final BaseCacheService baseCacheService;
-
     private final WarehouseInventoryManageRepository manageRepository;
 
     @Autowired
-    public MaterialKindManageService(ConsumerManageRepository consumerRepository, MaterialKindManageRepository materialRepository, RedisService redisService, BaseCacheService baseCacheService, WarehouseInventoryManageRepository manageRepository) {
+    public MaterialKindManageService(ConsumerManageRepository consumerRepository, MaterialKindManageRepository materialRepository, WarehouseInventoryManageRepository manageRepository) {
         this.consumerRepository = consumerRepository;
         this.materialRepository = materialRepository;
-        this.redisService = redisService;
-        this.baseCacheService = baseCacheService;
         this.manageRepository = manageRepository;
     }
 
@@ -110,15 +102,28 @@ public class MaterialKindManageService {
         }
     }
 
+
+    /**
+     * 获取用户信息
+     *
+     * @return map
+     */
+    private Map<Integer, String> getConsumerMap() {
+        List<ConsumerManageRecordEntity> consumerManageRecordList = consumerRepository.getConsumerListByType();
+        Map<Integer, String> resultMap = new HashMap<>(consumerManageRecordList.size());
+        consumerManageRecordList.forEach(consumer -> resultMap.put(consumer.getConsumerId(), consumer.getConsumerName()));
+        return resultMap;
+    }
+
     /**
      * 数据整合
      *
      * @param resultList 结果集
      */
     private void integrationData(List<MaterialKindManageEntity> resultList) {
-        Map<String, String> consumerCacheMap = getConsumerCacheMapList();
+        Map<Integer, String> consumerMap = getConsumerMap();
         resultList.forEach(materialKind -> {
-            String consumerName = consumerCacheMap.get((materialKind.getConsumerId().toString()));
+            String consumerName = consumerMap.get((materialKind.getConsumerId()));
             materialKind.setConsumerName(consumerName);
             if (CodeHelper.isNotNullOrEmpty(materialKind.getUnit())) {
                 materialKind.setUnit(this.getUnitName(materialKind.getUnit()));
@@ -169,8 +174,6 @@ public class MaterialKindManageService {
                 materialKindParams.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
             }
             MaterialKindManageEntity kindRecord = materialRepository.save(materialKindParams);
-            redisService.hset(REDIS_CACHE_KIND_KEY, String.valueOf(kindRecord.getProductKindId()), kindRecord.getProductKindName());
-            redisService.hset(REDIS_CACHE_KIND_INFO_KEY, String.valueOf(kindRecord.getProductKindId()), JSON.toJSONString(kindRecord));
             return CommonDataUtils.responseSuccess(kindRecord);
         } catch (Exception ex) {
             log.error("[保存物料类型]出现异常：{}", ex);
@@ -197,8 +200,6 @@ public class MaterialKindManageService {
                 return CommonDataUtils.responseFailure("库存中存在该物料的信息，请勿删除！");
             }
             materialRepository.deleteById(productKindId);
-            redisService.hdel(REDIS_CACHE_CONSUMER_KEY, String.valueOf(productKindId));
-            redisService.hdel(REDIS_CACHE_KIND_INFO_KEY, String.valueOf(productKindId));
             return CommonDataUtils.responseSuccess();
         } catch (Exception ex) {
             log.error("[删除物料类型]出现异常：{}", ex);
@@ -213,7 +214,10 @@ public class MaterialKindManageService {
      */
     public ResponseData getMaterialKindListByType() {
         try {
-            return CommonDataUtils.responseSuccess(getMaterialKindCache());
+            List<MaterialKindManageEntity> materialList = materialRepository.queryMaterialKindList();
+            Map<Integer, String> materialMap = new HashMap<>(materialList.size());
+            materialList.forEach(material -> materialMap.put(material.getProductKindId(), material.getProductKindName()));
+            return CommonDataUtils.responseSuccess(materialMap);
         } catch (Exception ex) {
             log.error("[获取物料类型缓存信息]出错:{}", ex);
         }
@@ -229,10 +233,10 @@ public class MaterialKindManageService {
     private void splicingParameter(MaterialKindManageEntity kindManageParams, List<FilterTerm> filterTerms) {
         if (CodeHelper.isNotNullOrEmpty(kindManageParams.getConsumerName())) {
             List<String> consumerIdList = new ArrayList<>();
-            Map<String, String> consumerCacheMap = getConsumerCacheMapList();
+            Map<Integer, String> consumerCacheMap = getConsumerMap();
             consumerCacheMap.forEach((consumerId, consumerName) -> {
                 if (consumerName.contains(kindManageParams.getConsumerName())) {
-                    consumerIdList.add(consumerId);
+                    consumerIdList.add(consumerId.toString());
                 }
             });
             kindManageParams.setConsumerIds(String.join(",", consumerIdList));
@@ -241,32 +245,6 @@ public class MaterialKindManageService {
         if (CodeHelper.isNotNull(kindManageParams.getProductKindName())) {
             filterTerms.add(new FilterTerm("productKindName", FilterKeyword.EQ));
         }
-    }
-
-    /**
-     * 获取物料类型信息
-     *
-     * @return 缓存
-     */
-    private Map<String, String> getMaterialKindCache() {
-        if (!redisService.exists(REDIS_CACHE_KIND_KEY)) {
-            baseCacheService.refreshBaseCache(REDIS_CACHE_KIND_KEY);
-        }
-        return redisService.hgetall(REDIS_CACHE_KIND_KEY);
-    }
-
-    /**
-     * 获取客户缓存信息
-     *
-     * @return 缓存
-     */
-    private Map<String, String> getConsumerCacheMapList() {
-        Map<String, String> consumerCacheMap = redisService.hgetall(CommonConstants.REDIS_CACHE_CONSUMER_KEY);
-        if (CodeHelper.isNullOrEmpty(consumerCacheMap)) {
-            baseCacheService.refreshBaseCache(REDIS_CACHE_CONSUMER_KEY);
-            consumerCacheMap = redisService.hgetall(CommonConstants.REDIS_CACHE_CONSUMER_KEY);
-        }
-        return consumerCacheMap;
     }
 
     /**

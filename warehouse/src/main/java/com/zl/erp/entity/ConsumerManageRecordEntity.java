@@ -55,7 +55,7 @@ public class ConsumerManageRecordEntity {
     /**
      * 创建时间
      */
-    @Column(name = "create_time")
+    @Column(name = "create_time",updatable = false)
     @Excel(name = "创建时间", width = 15)
     private String createTime;
 

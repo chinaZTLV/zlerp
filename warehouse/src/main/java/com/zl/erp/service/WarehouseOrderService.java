@@ -42,20 +42,20 @@ public class WarehouseOrderService {
 
     private final WarehousePurchaseSellingRepository sellingRepository;
 
-    private final WarehouseInventoryService inventoryService;
-
     private final FinanceFlowRecordRepository financeFlowRepository;
 
     private final WarehouseInventoryManageRepository inventoryRepository;
 
+    private final MaterialKindManageRepository manageRepository;
+
     @Autowired
-    public WarehouseOrderService(WarehouseOrderRepository orderRepository, PurchaseSellingOrderRepository sellingOrderRepository, WarehousePurchaseSellingRepository sellingRepository, WarehouseInventoryService inventoryService, FinanceFlowRecordRepository financeFlowRepository, WarehouseInventoryManageRepository inventoryRepository) {
+    public WarehouseOrderService(WarehouseOrderRepository orderRepository, PurchaseSellingOrderRepository sellingOrderRepository, WarehousePurchaseSellingRepository sellingRepository, FinanceFlowRecordRepository financeFlowRepository, WarehouseInventoryManageRepository inventoryRepository, MaterialKindManageRepository manageRepository) {
         this.orderRepository = orderRepository;
         this.sellingOrderRepository = sellingOrderRepository;
         this.sellingRepository = sellingRepository;
-        this.inventoryService = inventoryService;
         this.financeFlowRepository = financeFlowRepository;
         this.inventoryRepository = inventoryRepository;
+        this.manageRepository = manageRepository;
     }
 
     /**
@@ -178,7 +178,7 @@ public class WarehouseOrderService {
         record.setStockNum(orderInfo.getStockNum());
         record.setManageType(CommonConstants.ORDER_DELIVER_GOODS);
         record.setPurchasePrice(orderInfo.getPurchasePrice());
-        MaterialKindManageEntity materialKindCache = inventoryService.getMaterialKindCache(String.valueOf(orderInfo.getProductKindId()));
+        MaterialKindManageEntity materialKindCache = manageRepository.getMaterialKindById(orderInfo.getProductKindId());
         record.setSellingPrice(materialKindCache.getSellingPrice());
         sellingRepository.save(record);
         sellingOrderRepository.updateOrderInfoByOrderId(CommonConstants.ORDER_DELIVER_GOODS, orderInfo.getOrderId());
@@ -203,7 +203,7 @@ public class WarehouseOrderService {
             inventoryManage = new WarehouseInventoryManageEntity();
             newInventoryFlag = true;
         }
-        MaterialKindManageEntity kindManage = inventoryService.getMaterialKindCache(String.valueOf(orderInfo.getProductKindId()));
+        MaterialKindManageEntity kindManage = manageRepository.getMaterialKindById(orderInfo.getProductKindId());
         BigDecimal sellingPrice = new BigDecimal(kindManage.getSellingPrice());
         switch (Integer.parseInt(orderInfo.getManageType())) {
             case MANAGE_TYPE_RETURNED_TO_FACTORY:
