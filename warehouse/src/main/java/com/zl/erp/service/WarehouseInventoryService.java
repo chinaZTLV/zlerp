@@ -163,7 +163,7 @@ public class WarehouseInventoryService {
      * @return 金额
      */
     private BigDecimal getOrderAmount(PurchaseSellingOrderRecordEntity purchaseSellParams, BigDecimal unitPrice) {
-        BigDecimal discount = new BigDecimal(purchaseSellParams.getDiscount());
+        BigDecimal discount = new BigDecimal(purchaseSellParams.getDiscount()).divide(new BigDecimal("100"), 2, 4);
         BigDecimal stockNum = new BigDecimal(purchaseSellParams.getStockNum());
         BigDecimal totalAmount = unitPrice.multiply(stockNum);
         return totalAmount.multiply(discount);
@@ -190,42 +190,45 @@ public class WarehouseInventoryService {
      */
     @Transactional(rollbackFor = Exception.class)
     public ResponseData placingAnOrderVersion2(RequestData<PurchaseSellingOrderRecordEntity> requestData) {
-        PurchaseSellingOrderRecordEntity purchaseSellParams = requestData.getBody();
-        if (checkPlacingAnOrderParams(purchaseSellParams)) {
+        PurchaseSellingOrderRecordEntity params = requestData.getBody();
+        if (checkPlacingAnOrderParams(params)) {
             return CommonDataUtils.responseFailure(ERROR_PARAMS);
         }
         try {
             List<Integer> ownManageTypeList = Arrays.asList(MANAGE_TYPE_PURCHASE, MANAGE_TYPE_RETURNED_TO_FACTORY);
             List<Integer> manageTypeList = Arrays.asList(MANAGE_TYPE_SALES, MANAGE_TYPE_RETURNED_TO_FACTORY);
-            if (manageTypeList.contains(purchaseSellParams.getManageType())) {
-                WarehouseInventoryEntity warehouseInventory = inventoryRepository.getByProductKindId(purchaseSellParams.getProductKindId());
+            if (manageTypeList.contains(params.getManageType())) {
+                WarehouseInventoryEntity warehouseInventory = inventoryRepository.getByProductKindId(params.getProductKindId());
                 int stockNum = CodeHelper.isNotNull(warehouseInventory) ? warehouseInventory.getStockNum() : 0;
-                if (Integer.parseInt(purchaseSellParams.getStockNum()) > stockNum) {
+                if (Integer.parseInt(params.getStockNum()) > stockNum) {
                     return CommonDataUtils.responseFailure("库存不足！");
                 }
             }
             BigDecimal unitPrice;
-            MaterialKindManageEntity kindManage = materialRepository.getMaterialKindById(purchaseSellParams.getProductKindId());
-            if (ownManageTypeList.contains(purchaseSellParams.getManageType())) {
+            MaterialKindManageEntity kindManage = materialRepository.getMaterialKindById(params.getProductKindId());
+            if (ownManageTypeList.contains(params.getManageType())) {
                 // 进货、退还厂方 无折扣、折扣金额、利润等
-                purchaseSellParams.setDiscount("100");
-                purchaseSellParams.setDiscountAmount("0");
-                purchaseSellParams.setNetReceipt("0");
+                params.setDiscount("100");
+                params.setDiscountAmount("0");
+                params.setNetReceipt("0");
                 // 插入一个默认的用户
-                purchaseSellParams.setConsumerId(0);
+                params.setConsumerId(0);
                 unitPrice = new BigDecimal(kindManage.getPurchasePrice());
             } else {
-                if (CodeHelper.isNull(purchaseSellParams.getConsumerId())) {
+                if (CodeHelper.isNull(params.getConsumerId())) {
                     return CommonDataUtils.responseFailure("请选择用户！");
                 }
                 unitPrice = new BigDecimal(kindManage.getSellingPrice());
+                BigDecimal sellingPrice = unitPrice.divide(new BigDecimal(params.getStockNum()), 2, 4);
+                BigDecimal purchasePrice = new BigDecimal(kindManage.getPurchasePrice()).divide(new BigDecimal(params.getStockNum()), 2, 4);
+                params.setNetReceipt(CommonDataUtils.formatToString(sellingPrice.subtract(purchasePrice)));
             }
-            BigDecimal orderAmount = getOrderAmount(purchaseSellParams, unitPrice);
-            purchaseSellParams.setTotalAmount(CommonDataUtils.formatToString(orderAmount));
-            purchaseSellParams.setPurchasePrice(kindManage.getPurchasePrice());
-            purchaseSellParams.setTradeType(ORDER_PLACED);
-            purchaseSellParams.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
-            return CommonDataUtils.responseSuccess(sellingOrderRepository.save(purchaseSellParams));
+            BigDecimal orderAmount = getOrderAmount(params, unitPrice);
+            params.setTotalAmount(CommonDataUtils.formatToString(orderAmount));
+            params.setPurchasePrice(kindManage.getPurchasePrice());
+            params.setTradeType(ORDER_PLACED);
+            params.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
+            return CommonDataUtils.responseSuccess(sellingOrderRepository.save(params));
         } catch (Exception ex) {
             log.error("[下订单]异常信息:{}", ex);
             throw ex;
