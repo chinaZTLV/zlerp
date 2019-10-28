@@ -63,6 +63,8 @@ public class PurchaseSellingService {
             responsePageEntity.setData(resultList);
             responsePageEntity.setTotalPage(pageResult.getTotalPages());
             responsePageEntity.setTotalCount((int) pageResult.getTotalElements());
+            responsePageEntity.setPageIndex(requestPage.getPageIndex());
+            responsePageEntity.setPageSize(requestPage.getPageSize());
             return responsePageEntity;
         } catch (Exception ex) {
             log.error("[操作记录分页列表]查询异常：{}", ex);

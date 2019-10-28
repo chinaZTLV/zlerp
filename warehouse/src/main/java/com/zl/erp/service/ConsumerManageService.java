@@ -25,10 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.zl.erp.constants.CommonConstants.*;
 
@@ -79,6 +76,8 @@ public class ConsumerManageService {
             resultList.forEach(consumer -> consumer.setConsumerType("0".equals(consumer.getConsumerType()) ? "厂方" : "客户"));
             ResponseDataPage responsePageEntity = CommonDataUtils.successPageResponse();
             responsePageEntity.setData(resultList);
+            responsePageEntity.setPageIndex(requestPage.getPageIndex());
+            responsePageEntity.setPageSize(requestPage.getPageSize());
             responsePageEntity.setTotalPage(pageResult.getTotalPages());
             responsePageEntity.setTotalCount((int) pageResult.getTotalElements());
             return responsePageEntity;
@@ -121,13 +120,10 @@ public class ConsumerManageService {
         if (CodeHelper.isNullOrEmpty(params.getConsumerName()) || CodeHelper.isNullOrEmpty(params.getConsumerType()) || CodeHelper.isNullOrEmpty(params.getContactAddr())) {
             return CommonDataUtils.responseFailure(ERROR_PARAMS);
         }
-        String consumerName = params.getConsumerName();
         try {
-            ConsumerManageRecordEntity existsUser = manageRepository.getByConsumerName(consumerName);
-            if (CodeHelper.isNotNull(existsUser)) {
-                return CommonDataUtils.responseFailure(EXISTS_CONSUMER_USER_NAME_ERROR);
+            if (CodeHelper.isNull(params.getConsumerId())) {
+                params.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
             }
-            params.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
             ConsumerManageRecordEntity consumer = manageRepository.save(params);
             redisService.hset(REDIS_CACHE_CONSUMER_KEY, String.valueOf(consumer.getConsumerId()), consumer.getConsumerName());
             return CommonDataUtils.responseSuccess(consumer);
@@ -199,7 +195,10 @@ public class ConsumerManageService {
      */
     public ResponseData getConsumerListByType() {
         try {
-            return CommonDataUtils.responseSuccess(getConsumerCacheMap());
+            List<ConsumerManageRecordEntity> consumerManageRecordList = manageRepository.getConsumerListByType();
+            Map<Integer, String> resultMap = new HashMap<>(consumerManageRecordList.size());
+            consumerManageRecordList.forEach(consumer -> resultMap.put(consumer.getConsumerId(), consumer.getConsumerName()));
+            return CommonDataUtils.responseSuccess(resultMap);
         } catch (Exception ex) {
             log.error("[获取厂方缓存信息出错]", ex);
         }
@@ -225,6 +224,9 @@ public class ConsumerManageService {
      * @param filterTerms        过滤条件
      */
     private void splicingParameter(ConsumerManageRecordEntity manageRecordParams, List<FilterTerm> filterTerms) {
+        if (CodeHelper.isNull(manageRecordParams)) {
+            return;
+        }
         if (CodeHelper.isNotNullOrEmpty(manageRecordParams.getConsumerName())) {
             filterTerms.add(new FilterTerm("consumerName", FilterKeyword.LK));
         }

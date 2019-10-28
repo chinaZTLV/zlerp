@@ -74,6 +74,8 @@ public class WarehouseInventoryService {
             List<WarehouseInventoryEntity> resultList = pageResult.getContent();
             ResponseDataPage responsePageEntity = CommonDataUtils.successPageResponse();
             responsePageEntity.setData(resultList);
+            responsePageEntity.setPageIndex(requestPage.getPageIndex());
+            responsePageEntity.setPageSize(requestPage.getPageSize());
             responsePageEntity.setTotalCount((int) pageResult.getTotalElements());
             responsePageEntity.setTotalPage(pageResult.getTotalPages());
             return responsePageEntity;

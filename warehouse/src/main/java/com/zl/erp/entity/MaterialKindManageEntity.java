@@ -43,7 +43,7 @@ public class MaterialKindManageEntity {
     /**
      * 创建时间
      */
-    @Column(name = "create_time")
+    @Column(name = "create_time", updatable = false)
     @Excel(name = "创建时间", width = 15)
     private String createTime;
 
@@ -71,7 +71,7 @@ public class MaterialKindManageEntity {
     /**
      * 修改时间
      */
-    @Column(name = "update_time")
+    @Column(name = "update_time", insertable = false)
     @Excel(name = "修改时间", width = 15)
     private String updateTime;
 

@@ -79,6 +79,8 @@ public class MaterialKindManageService {
             integrationData(resultList);
             responsePageEntity.setData(resultList);
             responsePageEntity.setTotalPage(pageResult.getTotalPages());
+            responsePageEntity.setPageIndex(requestPage.getPageIndex());
+            responsePageEntity.setPageSize(requestPage.getPageSize());
             responsePageEntity.setTotalCount((int) pageResult.getTotalElements());
             return responsePageEntity;
         } catch (Exception ex) {
@@ -165,10 +167,6 @@ public class MaterialKindManageService {
                 materialKindParams.setUpdateTime(CommonDataUtils.getFormatDateString(new Date()));
             } else {
                 materialKindParams.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
-            }
-            MaterialKindManageEntity kindManage = materialRepository.getAllByProductKindName(materialKindParams.getProductKindName());
-            if (CodeHelper.isNotNull(kindManage)) {
-                return CommonDataUtils.responseSuccess(EXISTS_MATERIAL_NAME_ERROR);
             }
             MaterialKindManageEntity kindRecord = materialRepository.save(materialKindParams);
             redisService.hset(REDIS_CACHE_KIND_KEY, String.valueOf(kindRecord.getProductKindId()), kindRecord.getProductKindName());
