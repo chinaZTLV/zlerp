@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 
 import static com.zl.erp.constants.CommonConstants.ERROR_PARAMS;
+import static com.zl.erp.constants.CommonConstants.EXISTS_MATERIAL_NAME_ERROR;
 
 /**
  * @Description: 物料管理
@@ -172,6 +173,17 @@ public class MaterialKindManageService {
                 materialKindParams.setUpdateTime(CommonDataUtils.getFormatDateString(new Date()));
             } else {
                 materialKindParams.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
+            }
+            if (CodeHelper.isNull(materialKindParams.getProductKindId())) {
+                Integer count = materialRepository.checkExistsByName(materialKindParams.getProductKindName());
+                if (count > 0) {
+                    return CommonDataUtils.responseSuccess(EXISTS_MATERIAL_NAME_ERROR);
+                }
+            } else {
+                Integer count = materialRepository.checkExistsByNameAndId(materialKindParams.getProductKindName(), materialKindParams.getProductKindId());
+                if (count > 0) {
+                    return CommonDataUtils.responseSuccess(EXISTS_MATERIAL_NAME_ERROR);
+                }
             }
             MaterialKindManageEntity kindRecord = materialRepository.save(materialKindParams);
             return CommonDataUtils.responseSuccess(kindRecord);

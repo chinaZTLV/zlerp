@@ -63,7 +63,7 @@ public class WarehouseInventoryController extends BaseController {
      * @param requestData 请求入参
      * @return 客户信息
      */
-    @ApiOperation(value = "查看物料类型详情信息")
+    @ApiOperation(value = "查看库存详情信息")
     @PostMapping("/getWarehouseInventoryDetail")
     public Message getWarehouseInventoryDetail(@RequestBody RequestData<WarehouseInventoryEntity> requestData) {
         return convert(requestData.getHeader(), inventoryService.getWarehouseInventoryDetail(requestData));
@@ -96,4 +96,21 @@ public class WarehouseInventoryController extends BaseController {
             return convert(requestData.getHeader(), CommonDataUtils.responseFailure());
         }
     }
+
+    /**
+     * 获取物料库存
+     *
+     * @param requestData 请求入参
+     * @return 获取物料库存
+     */
+    @ApiOperation(value = "获取物料库存")
+    @PostMapping("/getMaterialCountByKindId")
+    public Message getMaterialCountByKindId(@RequestBody RequestData<PurchaseSellingOrderRecordEntity> requestData) {
+        try {
+            return convert(requestData.getHeader(), inventoryService.getMaterialCountByKindId(requestData));
+        } catch (Exception ex) {
+            return convert(requestData.getHeader(), CommonDataUtils.responseFailure());
+        }
+    }
+
 }

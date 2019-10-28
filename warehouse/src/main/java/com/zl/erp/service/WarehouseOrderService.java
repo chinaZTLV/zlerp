@@ -346,9 +346,11 @@ public class WarehouseOrderService {
      */
     private Map<String, String> getTradeStatusMap() {
         Map<String, String> tradeStatusMap = new HashMap<>(3);
-        tradeStatusMap.put("0", "已下单");
-        tradeStatusMap.put("1", "已发货");
-        tradeStatusMap.put("2", "已付款");
+        tradeStatusMap.put("0", "退还厂方");
+        tradeStatusMap.put("1", "进货");
+        tradeStatusMap.put("2", "售货");
+        tradeStatusMap.put("3", "退货");
+
         return tradeStatusMap;
     }
 
@@ -359,10 +361,9 @@ public class WarehouseOrderService {
      */
     private Map<String, String> getTradeTypeMap() {
         Map<String, String> tradeStatusMap = new HashMap<>(4);
-        tradeStatusMap.put("0", "退还厂方");
-        tradeStatusMap.put("1", "进货");
-        tradeStatusMap.put("2", "售货");
-        tradeStatusMap.put("3", "退货");
+        tradeStatusMap.put("0", "已下单");
+        tradeStatusMap.put("1", "已发货");
+        tradeStatusMap.put("2", "已付款");
         return tradeStatusMap;
     }
 }

@@ -137,7 +137,7 @@ public class WarehouseInventoryService {
                 unitPrice = new BigDecimal(kindManage.getPurchasePrice());
                 purchaseSellParams.setConsumerId(kindManage.getConsumerId());
                 // 进货、退还厂方 无折扣、折扣金额、利润等
-                purchaseSellParams.setDiscount("1");
+                purchaseSellParams.setDiscount("100");
                 purchaseSellParams.setDiscountAmount("0");
                 purchaseSellParams.setNetReceipt("0");
             } else {
@@ -199,7 +199,7 @@ public class WarehouseInventoryService {
             MaterialKindManageEntity kindManage = materialRepository.getMaterialKindById(purchaseSellParams.getProductKindId());
             if (ownTradeTypeList.contains(purchaseSellParams.getManageType())) {
                 // 进货、退还厂方 无折扣、折扣金额、利润等
-                purchaseSellParams.setDiscount("1");
+                purchaseSellParams.setDiscount("100");
                 purchaseSellParams.setDiscountAmount("0");
                 purchaseSellParams.setNetReceipt("0");
                 unitPrice = new BigDecimal(kindManage.getPurchasePrice());
@@ -214,6 +214,7 @@ public class WarehouseInventoryService {
             purchaseSellParams.setPurchasePrice(kindManage.getPurchasePrice());
             purchaseSellParams.setTradeType(ORDER_PLACED);
             purchaseSellParams.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
+            purchaseSellParams.setConsumerId(kindManage.getConsumerId());
             return CommonDataUtils.responseSuccess(sellingOrderRepository.save(purchaseSellParams));
         } catch (Exception ex) {
             log.error("[下订单]异常信息:{}", ex);
@@ -229,7 +230,7 @@ public class WarehouseInventoryService {
      */
     private boolean checkPlacingAnOrderParams(PurchaseSellingOrderRecordEntity purchaseSellParams) {
         return CodeHelper.isNullOrEmpty(purchaseSellParams.getDiscount()) || CodeHelper.isNull(purchaseSellParams.getProductKindId())
-                || CodeHelper.isNullOrEmpty(purchaseSellParams.getStockNum()) || CodeHelper.isNull(purchaseSellParams.getConsumerId());
+                || CodeHelper.isNullOrEmpty(purchaseSellParams.getStockNum());
     }
 
     /**
@@ -261,4 +262,24 @@ public class WarehouseInventoryService {
         return unitMap.get(key);
     }
 
+    /**
+     * 获取物料库存
+     *
+     * @param requestData 请求参数
+     * @return 结果集
+     */
+    public ResponseData getMaterialCountByKindId(RequestData<PurchaseSellingOrderRecordEntity> requestData) {
+        PurchaseSellingOrderRecordEntity params = requestData.getBody();
+        if (CodeHelper.isNull(params.getProductKindId())) {
+            return CommonDataUtils.responseFailure(ERROR_PARAMS);
+        }
+        WarehouseInventoryEntity warehouseInventory = inventoryRepository.getByProductKindId(params.getProductKindId());
+        Map<String, Integer> stockNumMap = new HashMap<>();
+        if (CodeHelper.isNull(warehouseInventory)) {
+            stockNumMap.put("stockNum", 0);
+            return CommonDataUtils.responseSuccess(stockNumMap);
+        }
+        stockNumMap.put("stockNum", warehouseInventory.getStockNum());
+        return CommonDataUtils.responseSuccess(stockNumMap);
+    }
 }

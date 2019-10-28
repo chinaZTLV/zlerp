@@ -21,6 +21,25 @@ public interface ConsumerManageRepository extends BaseRepository<ConsumerManageR
     ConsumerManageRecordEntity getByConsumerName(String consumerName);
 
     /**
+     * 检查是否存在
+     *
+     * @param consumerName 客户名称
+     * @return count
+     */
+    @Query(value = "SELECT COUNT(1) FROM consumer_manage_record WHERE consumer_name = ?1 ", nativeQuery = true)
+    Integer checkExists(String consumerName);
+
+    /**
+     * 检查是否存在
+     *
+     * @param consumerName 客户名称
+     * @param consumerId   客户编号
+     * @return count
+     */
+    @Query(value = "SELECT COUNT(1) FROM consumer_manage_record WHERE consumer_name = ?1 AND consumer_id != ?2", nativeQuery = true)
+    Integer checkExists(String consumerName, Integer consumerId);
+
+    /**
      * 获取客户编号
      *
      * @param consumerId 客户编号

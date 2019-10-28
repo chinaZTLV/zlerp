@@ -27,8 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 
-import static com.zl.erp.constants.CommonConstants.ERROR_PARAMS;
-import static com.zl.erp.constants.CommonConstants.FACTORY_TYPE;
+import static com.zl.erp.constants.CommonConstants.*;
 
 /**
  * @Description: 客户管理
@@ -117,7 +116,16 @@ public class ConsumerManageService {
         }
         try {
             if (CodeHelper.isNull(params.getConsumerId())) {
+                Integer existsUser = manageRepository.checkExists(params.getConsumerName());
+                if (existsUser > 0) {
+                    return CommonDataUtils.responseFailure(EXISTS_CONSUMER_USER_NAME_ERROR);
+                }
                 params.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
+            } else {
+                Integer existsUser = manageRepository.checkExists(params.getConsumerName(), params.getConsumerId());
+                if (existsUser > 0) {
+                    return CommonDataUtils.responseFailure(EXISTS_CONSUMER_USER_NAME_ERROR);
+                }
             }
             ConsumerManageRecordEntity consumer = manageRepository.save(params);
             return CommonDataUtils.responseSuccess(consumer);

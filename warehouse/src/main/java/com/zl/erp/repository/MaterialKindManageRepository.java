@@ -38,6 +38,25 @@ public interface MaterialKindManageRepository extends BaseRepository<MaterialKin
     MaterialKindManageEntity getAllByProductKindName(String kindName);
 
     /**
+     * 检测
+     *
+     * @param kindName 物料名称
+     * @return Integer
+     */
+    @Query(value = "SELECT COUNT(1) FROM material_kind_manage WHERE product_kind_name= ?1 ", nativeQuery = true)
+    Integer checkExistsByName(String kindName);
+
+    /**
+     * 检测
+     *
+     * @param kindName 物料名称
+     * @param kindId 物料编号
+     * @return Integer
+     */
+    @Query(value = "SELECT COUNT(1) FROM material_kind_manage WHERE product_kind_name= ?1 AND product_kind_id != ?2", nativeQuery = true)
+    Integer checkExistsByNameAndId(String kindName, Integer kindId);
+
+    /**
      * 获取该用户下是否有物料信息
      *
      * @param consumerId 厂方ID
@@ -47,8 +66,9 @@ public interface MaterialKindManageRepository extends BaseRepository<MaterialKin
 
     /**
      * 查询全部
+     *
      * @return getAll
      */
-    @Query(value = "SELECT * FROM material_kind_manage",nativeQuery = true)
+    @Query(value = "SELECT * FROM material_kind_manage", nativeQuery = true)
     List<MaterialKindManageEntity> queryMaterialKindList();
 }
