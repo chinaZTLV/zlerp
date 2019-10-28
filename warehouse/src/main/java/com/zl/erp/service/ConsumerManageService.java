@@ -12,6 +12,7 @@ import com.zl.erp.entity.MaterialKindManageEntity;
 import com.zl.erp.entity.WarehousePurchaseSellingRecordEntity;
 import com.zl.erp.repository.ConsumerManageRepository;
 import com.zl.erp.repository.MaterialKindManageRepository;
+import com.zl.erp.repository.WarehouseOrderRepository;
 import com.zl.erp.repository.WarehousePurchaseSellingRepository;
 import com.zl.erp.utils.CodeHelper;
 import com.zl.erp.utils.CommonDataUtils;
@@ -27,7 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 
-import static com.zl.erp.constants.CommonConstants.*;
+import static com.zl.erp.constants.CommonConstants.ERROR_PARAMS;
+import static com.zl.erp.constants.CommonConstants.EXISTS_CONSUMER_USER_NAME_ERROR;
 
 /**
  * @Description: 客户管理
@@ -44,11 +46,14 @@ public class ConsumerManageService {
 
     private final WarehousePurchaseSellingRepository sellingRepository;
 
+    private final WarehouseOrderRepository orderRepository;
+
     @Autowired
-    public ConsumerManageService(ConsumerManageRepository manageRepository, MaterialKindManageRepository kindManageRepository, WarehousePurchaseSellingRepository sellingRepository) {
+    public ConsumerManageService(ConsumerManageRepository manageRepository, MaterialKindManageRepository kindManageRepository, WarehousePurchaseSellingRepository sellingRepository, WarehouseOrderRepository orderRepository) {
         this.manageRepository = manageRepository;
         this.kindManageRepository = kindManageRepository;
         this.sellingRepository = sellingRepository;
+        this.orderRepository = orderRepository;
     }
 
     /**
@@ -149,16 +154,17 @@ public class ConsumerManageService {
             if (CodeHelper.isNull(consumerParams.getConsumerId()) && CodeHelper.isNull(consumerParams.getConsumerType())) {
                 return CommonDataUtils.responseFailure(ERROR_PARAMS);
             }
-            if (FACTORY_TYPE.equals(consumerParams.getConsumerType())) {
-                List<MaterialKindManageEntity> kindManageList = kindManageRepository.getAllByConsumerId(consumerParams.getConsumerId());
-                if (CodeHelper.isNotNullOrEmpty(kindManageList)) {
-                    return CommonDataUtils.responseFailure("该厂商存在物料信息，请勿删除！");
-                }
-            } else {
-                List<WarehousePurchaseSellingRecordEntity> sellingList = sellingRepository.queryAllByConsumerId(consumerParams.getConsumerId());
-                if (CodeHelper.isNotNullOrEmpty(sellingList)) {
-                    return CommonDataUtils.responseFailure("该客户存在订单信息，请勿删除！");
-                }
+            List<MaterialKindManageEntity> kindManageList = kindManageRepository.getAllByConsumerId(consumerParams.getConsumerId());
+            if (CodeHelper.isNotNullOrEmpty(kindManageList)) {
+                return CommonDataUtils.responseFailure("该厂商存在物料信息，请勿删除！");
+            }
+            List<WarehousePurchaseSellingRecordEntity> sellingList = sellingRepository.queryAllByConsumerId(consumerParams.getConsumerId());
+            if (CodeHelper.isNotNullOrEmpty(sellingList)) {
+                return CommonDataUtils.responseFailure("该客户存在订单信息，请勿删除！");
+            }
+            Integer count = orderRepository.checkExistsByConsumerId(consumerParams.getConsumerId());
+            if (count > 0) {
+                return CommonDataUtils.responseFailure("该客户存在订单信息，请勿删除！");
             }
             manageRepository.deleteById(consumerParams.getConsumerId());
             return CommonDataUtils.responseSuccess();
