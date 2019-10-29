@@ -206,10 +206,12 @@ public class ConsumerManageService {
             List<ConsumerManageRecordEntity> consumerManageRecordList = manageRepository.getConsumerListByType();
             List<DictionaryBean> dictionaryBeans = new ArrayList<>();
             consumerManageRecordList.forEach(consumer -> {
-                DictionaryBean dic = new DictionaryBean();
-                dic.setKey(consumer.getConsumerId());
-                dic.setValue(consumer.getConsumerName());
-                dictionaryBeans.add(dic);
+                if(consumer.getConsumerId() != 0){
+                    DictionaryBean dic = new DictionaryBean();
+                    dic.setKey(consumer.getConsumerId());
+                    dic.setValue(consumer.getConsumerName());
+                    dictionaryBeans.add(dic);
+                }
             });
             return CommonDataUtils.responseSuccess(dictionaryBeans);
         } catch (Exception ex) {
