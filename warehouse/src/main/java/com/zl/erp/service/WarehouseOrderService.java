@@ -234,22 +234,24 @@ public class WarehouseOrderService {
     private void inventoryManage(WarehouseOrderEntity orderInfo, WarehouseInventoryManageEntity inventoryManage, BigDecimal sellingPrice, boolean newFlag, int manageType) {
         String stockNum = orderInfo.getStockNum();
         String totalAmount;
+        BigDecimal finalStockNum;
         if (newFlag) {
+            finalStockNum = new BigDecimal(stockNum);
             inventoryManage.setProductKindId(orderInfo.getProductKindId());
             inventoryManage.setCreateTime(CommonDataUtils.getFormatDateString(new Date()));
-            totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(new BigDecimal(orderInfo.getStockNum())));
+            totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(new BigDecimal(stockNum)));
         } else {
             if (MANAGE_TYPE_RETURNED_TO_FACTORY == manageType || MANAGE_TYPE_SALES == manageType) {
-                BigDecimal stockNums = new BigDecimal(inventoryManage.getStockNum()).subtract(new BigDecimal(orderInfo.getStockNum()));
-                totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(stockNums));
-            } else if (MANAGE_TYPE_RETURNED_PURCHASE == manageType) {
-                BigDecimal stockNums = new BigDecimal(inventoryManage.getStockNum()).subtract(new BigDecimal(orderInfo.getStockNum()));
-                totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(stockNums));
+                finalStockNum = new BigDecimal(inventoryManage.getStockNum()).subtract(new BigDecimal(stockNum));
+                totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(finalStockNum));
+            } else if (MANAGE_TYPE_RETURNED_PURCHASE == manageType || MANAGE_TYPE_PURCHASE == manageType) {
+                finalStockNum = new BigDecimal(inventoryManage.getStockNum()).add(new BigDecimal(stockNum));
+                totalAmount = CommonDataUtils.formatToString(sellingPrice.multiply(finalStockNum));
             } else {
                 return;
             }
         }
-        inventoryManage.setStockNum(stockNum);
+        inventoryManage.setStockNum(CommonDataUtils.formatToString(finalStockNum));
         inventoryManage.setTotalAmount(totalAmount);
         inventoryRepository.save(inventoryManage);
     }
@@ -278,11 +280,12 @@ public class WarehouseOrderService {
             flowRecord.setFlowNumber(CommonDataUtils.getUUID());
             flowRecord.setOrderId(orderRecord.getOrderId());
             flowRecord.setProductKindId(orderRecord.getProductKindId());
-            List<String> deductTypeList = Arrays.asList(String.valueOf(MANAGE_TYPE_RETURNED_TO_FACTORY), String.valueOf(CommonConstants.MANAGE_TYPE_RETURNED_PURCHASE));
+            List<String> deductTypeList = Arrays.asList(String.valueOf(MANAGE_TYPE_RETURNED_TO_FACTORY), String.valueOf(MANAGE_TYPE_SALES));
             if (deductTypeList.contains(String.valueOf(orderRecord.getManageType()))) {
-                flowRecord.setFlowAmount(CommonDataUtils.formatToString(CommonDataUtils.decimalToMinus(new BigDecimal(orderRecord.getTotalAmount()))));
-            } else {
                 flowRecord.setFlowAmount(orderRecord.getTotalAmount());
+            } else {
+                // 退货 进货
+                flowRecord.setFlowAmount(CommonDataUtils.formatToString(CommonDataUtils.decimalToMinus(new BigDecimal(orderRecord.getTotalAmount()))));
             }
             flowRecord.setFlowType(orderRecord.getManageType());
             flowRecord.setFlowTime(CommonDataUtils.getFormatDateString(new Date()));
