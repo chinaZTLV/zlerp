@@ -206,7 +206,7 @@ public class ConsumerManageService {
             List<ConsumerManageRecordEntity> consumerManageRecordList = manageRepository.getConsumerListByType();
             List<DictionaryBean> dictionaryBeans = new ArrayList<>();
             consumerManageRecordList.forEach(consumer -> {
-                if(consumer.getConsumerId() != 0){
+                if(consumer.getConsumerId() != 1){
                     DictionaryBean dic = new DictionaryBean();
                     dic.setKey(consumer.getConsumerId());
                     dic.setValue(consumer.getConsumerName());
@@ -216,6 +216,31 @@ public class ConsumerManageService {
             return CommonDataUtils.responseSuccess(dictionaryBeans);
         } catch (Exception ex) {
             log.error("[获取厂方缓存信息出错]", ex);
+        }
+        return CommonDataUtils.errorPageResponse();
+    }
+
+
+    /**
+     * 客户信息
+     *
+     * @return 客户信息
+     */
+    public ResponseData getConsumerList() {
+        try {
+            List<ConsumerManageRecordEntity> consumerManageRecordList = manageRepository.getConsumerList();
+            List<DictionaryBean> dictionaryBeans = new ArrayList<>();
+            consumerManageRecordList.forEach(consumer -> {
+                if(consumer.getConsumerId() != 1){
+                    DictionaryBean dic = new DictionaryBean();
+                    dic.setKey(consumer.getConsumerId());
+                    dic.setValue(consumer.getConsumerName());
+                    dictionaryBeans.add(dic);
+                }
+            });
+            return CommonDataUtils.responseSuccess(dictionaryBeans);
+        } catch (Exception ex) {
+            log.error("[客户信息]", ex);
         }
         return CommonDataUtils.errorPageResponse();
     }

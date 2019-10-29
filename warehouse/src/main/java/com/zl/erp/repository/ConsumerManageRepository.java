@@ -54,4 +54,12 @@ public interface ConsumerManageRepository extends BaseRepository<ConsumerManageR
      */
     @Query(value = "SELECT * FROM consumer_manage_record WHERE consumer_type = 0", nativeQuery = true)
     List<ConsumerManageRecordEntity> getConsumerListByType();
+
+    /**
+     * 获取客户信息
+     *
+     * @return 厂方信息列表
+     */
+    @Query(value = "SELECT * FROM consumer_manage_record WHERE consumer_type = 1", nativeQuery = true)
+    List<ConsumerManageRecordEntity> getConsumerList();
 }

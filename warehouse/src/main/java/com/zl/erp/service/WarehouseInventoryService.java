@@ -70,6 +70,7 @@ public class WarehouseInventoryService {
             Page<WarehouseInventoryEntity> pageResult = inventoryRepository.commonQueryByMultiParamWithPage(manageParams, filterTerms, pageable, new FilterOrder("createTime", FilterKeyword.DESC));
             List<WarehouseInventoryEntity> resultList = pageResult.getContent();
             ResponseDataPage responsePageEntity = CommonDataUtils.successPageResponse();
+            resultList.forEach(inventory -> inventory.setUnit(getUnitName(inventory.getUnit())));
             responsePageEntity.setData(resultList);
             responsePageEntity.setPageIndex(requestPage.getPageIndex());
             responsePageEntity.setPageSize(requestPage.getPageSize());
@@ -195,6 +196,14 @@ public class WarehouseInventoryService {
             return CommonDataUtils.responseFailure(ERROR_PARAMS);
         }
         try {
+
+            if (MANAGE_TYPE_RETURNED_PURCHASE == params.getManageType()) {
+                Integer sellCount = sellingOrderRepository.getTotalStockCount(params.getConsumerId(), MANAGE_TYPE_SALES);
+                Integer returnCount = sellingOrderRepository.getTotalStockCount(params.getConsumerId(), MANAGE_TYPE_RETURNED_PURCHASE);
+                if (Integer.parseInt(params.getStockNum()) > (sellCount - returnCount)) {
+                    return CommonDataUtils.responseFailure("当前用户购买的数量不足以退货！");
+                }
+            }
             List<Integer> ownManageTypeList = Arrays.asList(MANAGE_TYPE_PURCHASE, MANAGE_TYPE_RETURNED_TO_FACTORY);
             List<Integer> manageTypeList = Arrays.asList(MANAGE_TYPE_SALES, MANAGE_TYPE_RETURNED_TO_FACTORY);
             if (manageTypeList.contains(params.getManageType())) {
@@ -212,16 +221,28 @@ public class WarehouseInventoryService {
                 params.setDiscountAmount("0");
                 params.setNetReceipt("0");
                 // 插入一个默认的用户
-                params.setConsumerId(0);
+                params.setConsumerId(1);
                 unitPrice = new BigDecimal(kindManage.getPurchasePrice());
             } else {
                 if (CodeHelper.isNull(params.getConsumerId())) {
                     return CommonDataUtils.responseFailure("请选择用户！");
                 }
                 unitPrice = new BigDecimal(kindManage.getSellingPrice());
-                BigDecimal sellingPrice = unitPrice.divide(new BigDecimal(params.getStockNum()), 2, 4);
-                BigDecimal purchasePrice = new BigDecimal(kindManage.getPurchasePrice()).divide(new BigDecimal(params.getStockNum()), 2, 4);
-                params.setNetReceipt(CommonDataUtils.formatToString(sellingPrice.subtract(purchasePrice)));
+                BigDecimal discount = new BigDecimal(params.getDiscount()).divide(new BigDecimal("100"), 2, 4);
+                BigDecimal sellingPrice = unitPrice.multiply(new BigDecimal(params.getStockNum()));
+                BigDecimal purchasePrice = new BigDecimal(kindManage.getPurchasePrice()).multiply(new BigDecimal(params.getStockNum()));
+                BigDecimal discountAmount = sellingPrice.subtract(discount.multiply(sellingPrice));
+                if (discountAmount.compareTo(new BigDecimal(DEFAULT_VALUE)) < 0) {
+                    // 转为正数
+                    BigDecimal discountAmo = new BigDecimal(CommonDataUtils.formatToString(discountAmount).replace("-", ""));
+                    params.setDiscountAmount(CommonDataUtils.formatToString(discountAmo));
+                    params.setNetReceipt(CommonDataUtils.formatToString(sellingPrice.add(purchasePrice).add(discountAmo)));
+
+                } else {
+
+                    params.setDiscountAmount(CommonDataUtils.formatToString(CommonDataUtils.decimalToMinus(discountAmount)));
+                    params.setNetReceipt(CommonDataUtils.formatToString(sellingPrice.subtract(purchasePrice).subtract(discountAmount)));
+                }
             }
             BigDecimal orderAmount = getOrderAmount(params, unitPrice);
             params.setUnitPrice(CommonDataUtils.formatToString(unitPrice));

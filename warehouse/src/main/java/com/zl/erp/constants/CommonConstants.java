@@ -117,4 +117,9 @@ public class CommonConstants {
      */
     public static final String ORDER_PAY = "2";
 
+    /**
+     * 默认值
+     */
+    public static final String DEFAULT_VALUE = "0.00";
+
 }

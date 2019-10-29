@@ -105,10 +105,21 @@ public class ConsumerManageController extends BaseController {
      *
      * @return 厂方信息
      */
-    @ApiOperation(value = "获取下拉列表", notes = "从redis中读取")
+    @ApiOperation(value = "获取下拉列表")
     @PostMapping("/getConsumerListByType")
     public Message getConsumerListByType() {
         return convert(new Header(), consumerManageService.getConsumerListByType());
+    }
+
+    /**
+     * 客户信息
+     *
+     * @return 厂方信息
+     */
+    @ApiOperation(value = "获取下拉列表")
+    @PostMapping("/getConsumerList")
+    public Message getConsumerList() {
+        return convert(new Header(), consumerManageService.getConsumerList());
     }
 
 }

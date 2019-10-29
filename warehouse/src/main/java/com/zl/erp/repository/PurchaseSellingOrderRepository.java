@@ -28,4 +28,15 @@ public interface PurchaseSellingOrderRepository extends BaseRepository<PurchaseS
     @Modifying
     @Query(value = "UPDATE purchase_selling_order_record SET trade_type = ?1 WHERE order_id = ?2", nativeQuery = true)
     void updateOrderInfoByOrderId(String tradeType, Integer orderId);
+
+    /**
+     * 查询数量
+     *
+     * @param consumerId 客户ID
+     * @param manageType 管理类型
+     * @return Integer
+     */
+    @Query(value = "SELECT SUM(stock_num) from purchase_selling_order_record WHERE consumer_id = ?1 AND manage_type = ?2 AND trade_type=2", nativeQuery = true)
+    Integer getTotalStockCount(Integer consumerId, Integer manageType);
+
 }
