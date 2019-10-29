@@ -1,3 +1,6 @@
+DROP DATABASE IF EXISTS `erp_base`;
+create schema `erp_base` default character set utf8 collate utf8_general_ci;
+
 -- 物料种类管理
 DROP TABLE IF EXISTS `erp_base`.`material_kind_manage`;
 CREATE TABLE `erp_base`.`material_kind_manage` (
@@ -54,6 +57,8 @@ CREATE TABLE `erp_base`.`consumer_manage_record` (
 PRIMARY KEY ( `consumer_id` ) 
 ) ENGINE = INNODB DEFAULT CHARSET = utf8 COMMENT = '客户管理';
 
+INSERT INTO `erp_base`.`consumer_manage_record`(`consumer_id`, `consumer_name`, `consumer_type`, `contact_phone`, `contact_addr`, `create_time`, `remark`) VALUES (0, '仓库管理员', 0, '18014852203', '南京市雨花台区将军大道', '2019-10-28 21:50:18', '仓库管理员');
+
 -- 订单管理
 DROP TABLE IF EXISTS `erp_base`.`purchase_selling_order_record`;
 CREATE TABLE `erp_base`.`purchase_selling_order_record` (
@@ -93,8 +98,8 @@ PRIMARY KEY ( `flow_id` )
 ) ENGINE = INNODB DEFAULT CHARSET = utf8 COMMENT = '财务流水';
 
 -- 库存
-DROP VIEW IF EXISTS `v_warehouse_inventory`;
-CREATE VIEW `v_warehouse_inventory` AS
+DROP VIEW IF EXISTS `erp_base`.`v_warehouse_inventory`;
+CREATE VIEW `erp_base`.`v_warehouse_inventory` AS
 SELECT
 	inventory.stock_id,
 	inventory.product_kind_id,
@@ -110,13 +115,13 @@ SELECT
 	kind.product_kind_name,
 	kind.unit 
 FROM
-	warehouse_inventory_manage inventory
-	JOIN material_kind_manage kind ON inventory.product_kind_id = kind.product_kind_id
-	JOIN consumer_manage_record consumer ON kind.consumer_id = consumer.consumer_id;
+	`erp_base`.warehouse_inventory_manage inventory
+	JOIN `erp_base`.material_kind_manage kind ON inventory.product_kind_id = kind.product_kind_id
+	JOIN `erp_base`.consumer_manage_record consumer ON kind.consumer_id = consumer.consumer_id;
 	
 -- 订单
-DROP VIEW IF EXISTS `v_warehouse_order`;
-CREATE VIEW `v_warehouse_order` AS SELECT
+DROP VIEW IF EXISTS `erp_base`.`v_warehouse_order`;
+CREATE VIEW `erp_base`.`v_warehouse_order` AS SELECT
 record.order_id,
 record.trade_type,
 record.manage_type,
@@ -134,13 +139,13 @@ record.create_time,
 consumer.consumer_name,
 consumer.consumer_id 
 FROM
-	purchase_selling_order_record record
-	JOIN consumer_manage_record consumer ON record.consumer_id = consumer.consumer_id
-	JOIN material_kind_manage kind ON record.product_kind_id = kind.product_kind_id;
+	`erp_base`.purchase_selling_order_record record
+	JOIN `erp_base`.consumer_manage_record consumer ON record.consumer_id = consumer.consumer_id
+	JOIN `erp_base`.material_kind_manage kind ON record.product_kind_id = kind.product_kind_id;
 	
 -- 财务
-DROP VIEW IF EXISTS `v_finance_flow`;
-CREATE VIEW `v_finance_flow` AS 
+DROP VIEW IF EXISTS `erp_base`.`v_finance_flow`;
+CREATE VIEW `erp_base`.`v_finance_flow` AS
 SELECT
 record.order_id,
 record.flow_id,
@@ -153,13 +158,13 @@ record.consumer_id,
 consumer.consumer_name,
 kind.product_kind_name
 FROM
-	finance_flow_record record
-	JOIN consumer_manage_record consumer ON record.consumer_id = consumer.consumer_id
-	JOIN material_kind_manage kind ON record.product_kind_id = kind.product_kind_id;
+	`erp_base`.finance_flow_record record
+	JOIN `erp_base`.consumer_manage_record consumer ON record.consumer_id = consumer.consumer_id
+	JOIN `erp_base`.material_kind_manage kind ON record.product_kind_id = kind.product_kind_id;
 	
 -- 进售货记录
-DROP VIEW IF EXISTS `v_purchase_selling_record`;
-CREATE VIEW `v_purchase_selling_record` AS 
+DROP VIEW IF EXISTS `erp_base`.`v_purchase_selling_record`;
+CREATE VIEW `erp_base`.`v_purchase_selling_record` AS
 SELECT
 	record.record_id,
 	record.order_id,
@@ -173,7 +178,7 @@ SELECT
 	consumer.consumer_name,
 	kind.product_kind_name 
 FROM
-	warehouse_purchase_selling_record record
-	JOIN consumer_manage_record consumer ON record.consumer_id = consumer.consumer_id
-	JOIN material_kind_manage kind ON record.product_kind_id = kind.product_kind_id;
+	`erp_base`.warehouse_purchase_selling_record record
+	JOIN `erp_base`.consumer_manage_record consumer ON record.consumer_id = consumer.consumer_id
+	JOIN `erp_base`.material_kind_manage kind ON record.product_kind_id = kind.product_kind_id;
 	
