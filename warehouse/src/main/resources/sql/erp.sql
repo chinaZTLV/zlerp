@@ -59,6 +59,7 @@ PRIMARY KEY ( `consumer_id` )
 
 INSERT INTO `erp_base`.`consumer_manage_record`(`consumer_id`, `consumer_name`, `consumer_type`, `contact_phone`, `contact_addr`, `create_time`, `remark`) VALUES (0, '仓库管理员', 0, '18014852203', '南京市雨花台区将军大道', '2019-10-28 21:50:18', '仓库管理员');
 
+
 -- 订单管理
 DROP TABLE IF EXISTS `erp_base`.`purchase_selling_order_record`;
 CREATE TABLE `erp_base`.`purchase_selling_order_record` (

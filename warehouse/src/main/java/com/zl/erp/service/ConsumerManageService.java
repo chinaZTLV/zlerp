@@ -255,6 +255,10 @@ public class ConsumerManageService {
         if (CodeHelper.isNull(manageRecordParams)) {
             return;
         }
+
+        manageRecordParams.setConsumerId(1);
+        filterTerms.add(new FilterTerm("consumerId", FilterKeyword.NEQ));
+
         if (CodeHelper.isNotNullOrEmpty(manageRecordParams.getConsumerName())) {
             filterTerms.add(new FilterTerm("consumerName", FilterKeyword.LK));
         }
